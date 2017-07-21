@@ -13,7 +13,7 @@
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   3.0.7
+*  @version   3.0.8
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -440,19 +440,27 @@ EOF;
             ),
             Configuration::get('ETRANS_BO_ACTIONS'),
             '1',
-            $this->l('Automatic refunds, order modifications...'),
+            null,
             true,
             false
+        );
+
+        // Alert about test environment
+        $w->formAlert(
+            'ETRANS_BO_ACTIONS_alert',
+            $this->l('Automation of Back Office actions will trigger refunds for every modification of an order amount (production cancellation, product price modification...).')
         );
 
         $js = <<<EOF
 $('#ETRANS_WEB_CASH_DIRECT').change(function() {
     if (this.value == 1 || this.value == 2) {
         $('#ETRANS_BO_ACTIONS_container').show('normal');
+        $('#ETRANS_BO_ACTIONS_alert').show();
     }
     else {
         $('#ETRANS_BO_ACTIONS_container').hide('normal');
         $('#ETRANS_BO_ACTIONS').val('0').trigger('change');
+        $('#ETRANS_BO_ACTIONS_alert').hide();
     }
 }).change();
 (function($){
@@ -460,6 +468,7 @@ $('#ETRANS_WEB_CASH_DIRECT').change(function() {
         if ('0' == $('#ETRANS_WEB_CASH_DIRECT').val()) {
             $('#ETRANS_BO_ACTIONS_container').hide('normal');
             $('#ETRANS_BO_ACTIONS').val('0').trigger('change');
+            $('#ETRANS_BO_ACTIONS_alert').hide();
         }
     });
 })(jQuery);
@@ -950,7 +959,7 @@ EOF;
         $client->setFollowRedirect(false);
         $error = null;
 
-        $testUrl = 'http://www1.paybox.com/modules/ps_latest_version_ET.php';
+        $testUrl = 'http://www1.paybox.com/modules/ps_latest_version_et.php';
         try {
             $response = $client->get($testUrl);
             if (!is_array($response)) {
@@ -989,6 +998,12 @@ EOF;
                 $message = sprintf($this->l('UpdateMessage'), $currentVersion, $latestVersion, $changeLog, $latestVersionContent->url);
                 $w->alertWarn(Tools::htmlentitiesDecodeUTF8($message));
             }
+
+            if (property_exists($latestVersionContent, 'documentation')) {
+                Configuration::updateValue('ETRANS_DOC_URL', $latestVersionContent->documentation);
+            }
+
+            $w->helpWidget($this->l('Help'), $this->l('See the documentation for help'), Configuration::get('ETRANS_DOC_URL'));
         }
     }
 
@@ -997,8 +1012,6 @@ EOF;
         $w = new ETransactionsHtmlWriter($this->getModule());
 
         $this->_writeModuleVersionCheck($w);
-
-        $w->helpWidget($this->l('Help'), $this->l('See the documentation for help'), $this->getModule()->getCurrentDocPath());
 
         $this->_writeServerBlock($w);
         $this->_writeInfoBlock($w);

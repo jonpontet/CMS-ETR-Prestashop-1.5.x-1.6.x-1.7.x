@@ -146,7 +146,7 @@ $_MODULE['<{etransactions}prestashop>etransactionsadminconfig_fe7aa1657c958c1eb6
 $_MODULE['<{etransactions}prestashop>etransactionsadminconfig_9cdcbe880d24b2e86879d99b21ae3ccf'] = 'Moyen de paiement (exemple : ';
 $_MODULE['<{etransactions}prestashop>etransactionsadminconfig_23037a7595afa6d40abbb027475e5acb'] = 'Module et moyen de paiement (exemple : ';
 $_MODULE['<{etransactions}prestashop>etransactionsadminconfig_67f771ae4d4fd8d37e01e7e1bd586b1d'] = 'Automatisation des actions Back-Office';
-$_MODULE['<{etransactions}prestashop>etransactionsadminconfig_285045687ec26927af4a26cf7f91ce9e'] = 'Remboursements automatiques, modifications de commandes...';
+$_MODULE['<{etransactions}prestashop>etransactionsadminconfig_bda7c7e0806a963b58d418c36499221f'] = 'L\'automatisation des actions Back-Office va déclencher des remboursements pour chaque modification du montant de la commande (suppression de produit, modification de prix d\'un produit...).';
 $_MODULE['<{etransactions}prestashop>etransactionsadminorder_ab116d52ec2aa15f6cc3c5ff66deb399'] = 'Détails du paiement';
 $_MODULE['<{etransactions}prestashop>etransactionsadminorder_4c943e22dcb7953912d021539cc07de5'] = 'Réf. E-Transactions :';
 $_MODULE['<{etransactions}prestashop>etransactionsadminorder_d36a6948b01d3a75ed99858e2bfea939'] = 'Méthode de paiement :';

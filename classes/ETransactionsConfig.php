@@ -13,7 +13,7 @@
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   3.0.7
+*  @version   3.0.8
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -65,8 +65,9 @@ class ETransactionsConfig
         'ETRANS_WALLET_PERSONNAL_DATA'          => 0,
         'ETRANS_DEFAULTCATEGORYID'              => '',
         'ETRANS_WEB_CASH_ACTION'                => 'N',
-        'ETRANS_BO_ACTIONS'                     => 1,
+        'ETRANS_BO_ACTIONS'                     => 0,
         'ETRANS_PAYMENT_DISPLAY'                => 0,
+        'ETRANS_DOC_URL'                        => 'https://www.e-transactions.fr/pages/global.php?page=telechargement',
         //'ETRANS_CANCEL_URL'                     => 'http://'.htmlspecialchars($_SERVER['HTTP_HOST'], ENT_COMPAT, 'UTF-8').__PS_BASE_URI__.'modules/'.$this->name.'/validation.php',
         //'ETRANS_NOTIFICATION_URL'               => 'http://'.htmlspecialchars($_SERVER['HTTP_HOST'], ENT_COMPAT, 'UTF-8').__PS_BASE_URI__.'modules/'.$this->name.'/validation.php',
         //'ETRANS_RETURN_URL'                     => 'http://'.htmlspecialchars($_SERVER['HTTP_HOST'], ENT_COMPAT, 'UTF-8').__PS_BASE_URI__.'modules/'.$this->name.'/validation.php',

@@ -8,12 +8,12 @@
 * LICENSE: This source file is subject to the version 3.0 of the Open
 * Software License (OSL-3.0) that is available through the world-wide-web
 * at the following URI: http://opensource.org/licenses/OSL-3.0. If
-* you did not receive a copy of the OSL-3.0 license and are unable 
+* you did not receive a copy of the OSL-3.0 license and are unable
 * to obtain it through the web, please send a note to
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   2.1.3
+*  @version   3.0.8
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -27,7 +27,18 @@ require_once($dir.'/config/config.inc.php');
 if (version_compare(_PS_VERSION_, '1.5', '<') || !in_array($action, array('i', 'j'))) {
     require_once($dir.'/init.php');
 }
-require_once(dirname(__FILE__).'/etransactions.php');
+
+if (!defined('_PS_OVERRIDE_DIR_')) {
+    $overrideDir = _PS_ROOT_DIR_.'/override/';
+} else {
+    $overrideDir = _PS_OVERRIDE_DIR_;
+}
+$overrideDir .= 'modules/etransactions';
+if (file_exists($overrideDir.'etransactions.php')) {
+    require_once($overrideDir.'/etransactions.php');
+} else {
+    require_once(dirname(__FILE__).'/etransactions.php');
+}
 
 $c = new ETransactionsController();
 try {
@@ -60,7 +71,7 @@ try {
         case 'j':
             $c->ipnAction();
             break;
-        
+
         default:
             $c->defaultAction();
     }

@@ -13,7 +13,7 @@
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   3.0.7
+*  @version   3.0.8
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -42,7 +42,7 @@ class ETransactionsAdminOrder extends ETransactionsAbstractAdmin
         $label = $this->l('Payment details');
         $w->blockStart('etrans_details', $label, $this->getImagePath().'etransactions-xs.png');
 
-        $w->helpWidget($this->l('Help'), $this->l('See the documentation for help'), $this->getModule()->getCurrentDocPath());
+        $w->helpWidget($this->l('Help'), $this->l('See the documentation for help'), Configuration::get('ETRANS_DOC_URL'));
 
         $tpl = '<p><strong>%s</strong> %s</p>';
 
@@ -500,12 +500,12 @@ EOF;
         }
 
         // Can be refunded?
-        else if ($this->getHelper()->canRefund($orderId)) {
+        elseif ($this->getHelper()->canRefund($orderId) && 'PREPAYEE' != $details['method']) {
             $this->_writeRefundableDetails($w, $details);
         }
 
         // Waiting for capture?
-        else if ($this->getHelper()->canCapture($orderId)) {
+        elseif ($this->getHelper()->canCapture($orderId)) {
             $this->_writeCapturableDetails($w, $details);
         }
 
@@ -559,7 +559,13 @@ EOF;
             return;
         }
 
-        $result = $this->getHelper()->makeCaptureAmount($order, $details, Tools::getValue('amountCapture'));
+        $amount = Tools::getValue('amountCapture');
+        if (!$this->getHelper()->isValidAmount($amount, $this->getHelper()->getCurrencyDecimals($order))) {
+            $w->alertError($this->l('Error when making capture request').' '.$this->l('Invalid amount:').' '.$amount);
+            return false;
+        }
+
+        $result = $this->getHelper()->makeCaptureAmount($order, $details, $amount);
 
         switch ($result) {
             case 0:
@@ -613,7 +619,7 @@ EOF;
         }
 
         $amount = Tools::getValue('amountRefund');
-        if (!$this->getHelper()->isValidAmount($amount)) {
+        if (!$this->getHelper()->isValidAmount($amount, $this->getHelper()->getCurrencyDecimals($order))) {
             $w->alertError($this->l('Error when making refund request').' '.$this->l('Invalid amount:').' '.$amount);
             return false;
         }

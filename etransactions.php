@@ -36,8 +36,6 @@ class ETransactions extends PaymentModule
     private $_plateform;
     private $_html = '';
     private $_message = '';
-    private $_documentation;
-
 
     public function __construct()
     {
@@ -58,8 +56,6 @@ class ETransactions extends PaymentModule
 
         $this->displayName = 'E-Transactions';
         $this->description = $this->l('In one integration, offer many payment methods, get a customized secure payment page, multi-lingual and multi-currency and offer debit on delivery or in 3 installments without charges for your customers.');
-
-        $this->_documentation = 'manuel-module-prestashop-v2.pdf';
     }
 
     public function getConfig()
@@ -101,16 +97,6 @@ class ETransactions extends PaymentModule
     public function getHelper()
     {
         return $this->_helper;
-    }
-
-    public function getDocPath()
-    {
-        return $this->getPath().'doc/';
-    }
-
-    public function getCurrentDocPath()
-    {
-        return $this->getDocPath().$this->_documentation;
     }
 
     public function getImagePath()
@@ -942,7 +928,7 @@ class ETransactions extends PaymentModule
 
             // Check last payment
             $paidAmount = $details['initial_amount'] + $platformAmount;
-            if ((int)$paidAmount == (int)($orderAmount * $amountScale)) {
+            if ((int)$paidAmount == intval(strval($orderAmount * $amountScale))) {
                 $lastPayment = true;
             }
 

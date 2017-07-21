@@ -413,7 +413,7 @@ class ETransactionsHelper extends ETransactionsAbstract
                 'carte' => $params['cardType'],
                 'pays' => isset($params['country']) ? $params['country'] : '',
                 'ip' => $params['ip'],
-                'secure' => $params['3dsWarranty'],
+                'secure' => isset($params['3dsWarranty']) ? $params['3dsWarranty'] : 'N',
                 'date' => $params['date']
             );
 
@@ -543,7 +543,7 @@ class ETransactionsHelper extends ETransactionsAbstract
         }
 
         // Payment platform => PrestaShop
-        $values['PBX_RETOUR'] = 'M:M;R:R;T:T;A:A;B:B;C:C;D:D;E:E;F:F;G:G;I:I;J:J;N:N;O:O;P:P;Q:Q;S:S;W:W;Y:Y;K:K';
+        $values['PBX_RETOUR'] = 'M:M;R:R;T:T;A:A;B:B;C:C;D:D;E:E;F:F;G:G;I:I;J:J;N:N;O:O;P:P;Q:Q;S:S;W:W;Y:Y;Z:Z;K:K';
         $values['PBX_RUF1'] = 'POST';
 
         // Choose correct language
@@ -1076,8 +1076,8 @@ class ETransactionsHelper extends ETransactionsAbstract
      */
     public function getRealPaymentMethodName($cardType)
     {
+        // ANCV: Sleep for next payments
         if ('LIMOCB' == $cardType) {
-            // Sleep for ANCV next payments
             sleep(6);
             return 'ANCV';
         }
@@ -1213,7 +1213,7 @@ class ETransactionsHelper extends ETransactionsAbstract
         $sql = 'UPDATE `%setransactions_order` SET `payment_status` = "capture",'
             .' `id_transaction` = %d, `amount` = %d'
             .' WHERE `id_order` = %d';
-        $sql = sprintf($sql, _DB_PREFIX_, intval($response['NUMTRANS']), intval(($amount - $partialRefund) * $amountScale), $order->id);
+        $sql = sprintf($sql, _DB_PREFIX_, intval($response['NUMTRANS']), intval(strval(($amount - $partialRefund) * $amountScale)), $order->id);
         if (!Db::getInstance()->execute($sql)) {
             die(Tools::displayError('Error when updating E-Transactions database'));
         }
@@ -1852,9 +1852,9 @@ class ETransactionsHelper extends ETransactionsAbstract
         return true;
     }
 
-    public function isValidAmount($amount)
+    public function isValidAmount($amount, $amountScale = 2)
     {
-        if (preg_match('/^[0-9]{1,10}(\.[0-9]{1,2})?$/', $amount)) {
+        if (preg_match('/^[0-9]{1,10}(\.[0-9]{1,'.$amountScale.'})?$/', $amount)) {
             if ($amount > 0) {
                 return true;
             }

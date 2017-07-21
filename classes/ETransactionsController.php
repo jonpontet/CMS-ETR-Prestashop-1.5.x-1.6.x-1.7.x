@@ -149,6 +149,20 @@ class ETransactionsController extends ETransactionsAbstract
                     }
                 }
             }
+            // [3.0.8] Try to check Z (paymentIndex) param for mixed payments
+            if ('mixed' !== $type && array_key_exists('paymentIndex', $params)) {
+                if (3 <= strlen($params['paymentIndex'])) {
+                    // Z=1-2 (Index of payment - Count of payments)
+                    $indexData = explode('-', $params['paymentIndex']);
+                    if (1 < count($indexData)) {
+                        // Check if several payments are expected
+                        if ('1' !== $indexData[1]) {
+                            $type = 'mixed';
+                            sleep(6);
+                        }
+                    }
+                }
+            }
 
             // Load cart
             $cart = $this->getHelper()->untokenizeCart($params['reference']);
@@ -276,6 +290,7 @@ class ETransactionsController extends ETransactionsAbstract
         <!doctype html>
         <html>
             <body>
+                <div style="width: 950px; margin: auto; margin-top: 20px; padding: 20px; background-color: #0089CF; font-family: Arial,sans-serif; font-size: 16px; font-weight: bold; color: white; text-align: center;">
                 <form action="<?php echo Tools::htmlentitiesUTF8($url); ?>" method="post" name="E-Transactions" enctype="application/x-www-form-urlencoded">
                     <p><center>
                         <?php
@@ -286,7 +301,7 @@ class ETransactionsController extends ETransactionsAbstract
                         }
                         ?>
                     </center></p>
-                <p><center><button><?php echo $this->l('Continue...'); ?></button></center></p>
+                <p><center><button style="margin-top: 35px; background-color: #ffffff; border: none; color: #0089CF; padding: 10px 38px; font-size: 16px; font-weight: 600; cursor: pointer;"><?php echo $this->l('Continue...'); ?></button></center></p>
             <?php
             foreach ($values as $name => $value) {
                 $name = Tools::htmlentitiesUTF8($name);
@@ -300,7 +315,8 @@ class ETransactionsController extends ETransactionsAbstract
                 }
             }
             ?>
-        </form>
+            </form>
+        </div>
         <?php
         if (!$debug) {
             echo '<script>document.forms["E-Transactions"].submit();</script>';
@@ -365,7 +381,7 @@ class ETransactionsController extends ETransactionsAbstract
                                 <meta http-equiv="refresh" content="1;url=<?php echo htmlentities($url); ?>"/>
                             </head>
                             <body>
-                                 <?php echo '<div style="width: 650px; margin: auto; margin-top: 20px; padding: 20px; background-color: #0089CF; font-family: Arial,sans-serif; font-size: 16px; font-weight: bold; color: white; text-align: center;">'.$this->l('Please wait while validating the order...').'</div>'; ?>
+                                <?php echo '<div style="width: 650px; margin: auto; margin-top: 20px; padding: 20px; background-color: #0089CF; font-family: Arial,sans-serif; font-size: 16px; font-weight: bold; color: white; text-align: center;">'.$this->l('Please wait while validating the order...').'</div>'; ?>
                             </body>
                         </html>
                         <?php

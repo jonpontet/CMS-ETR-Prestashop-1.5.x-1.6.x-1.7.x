@@ -1,14 +1,22 @@
 # Change Log
 
-## [3.0.8] - 2017-07-13
+## [3.0.8] - 2017-07-19
 ### Ajouts
-- Gestion paiements fractionnés (ANCV): champ de configuration pour chaque moyen de paiement, traitement IPN spécifique
+- Gestion paiements fractionnés (ANCV + paramètre Z): champ de configuration pour chaque moyen de paiement, traitement IPN spécifique, gestion paramètre Z
 - Compatibilité PrestaShop 1.7 : gestion de la nouvelle fonctionnalité "Recalculer les frais de port après modification de commande"
+- Capture manuelle : validation du montant saisi avec gestion de la décimale de la devise (ajout sur Remboursement manuel)
+- Support basique de surcharges : classe principale du module dans 'override/modules/etransactions' et classes utilitaires dans 'override/modules/etransactions/classes'
 
 ### Modifications
+- Page de redirection vers le paiement : style
 - Page d'attente de retour de paiement : style, augmentation des itérations (10 => 20)
 - CartLocker : ajout 'id_transaction' pour gestion paiements fractionnés
+- Automatisation Back-Office : désactivée par défaut, alerte dans la configuration du module
+- Documentation : suppression du PDF dans le module, récupération lors de l'appel au service de vérification de version E-Transactions
 - Traductions
+
+### Corrections
+- Capture après autorisation (paiement à l'expédition...) : correction problème de mise à jour de montant (intval)
 
 ## [3.0.7] - 2017-06-27
 ### Ajouts
