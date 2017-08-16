@@ -13,7 +13,7 @@
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   3.0.8
+*  @version   3.0.9
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -46,7 +46,7 @@ class ETransactions extends PaymentModule
 
         $this->name = 'etransactions';
         $this->tab = 'payments_gateways';
-        $this->version = '3.0.8';
+        $this->version = '3.0.9';
         $this->author = 'E-Transactions';
         $this->bootstrap = true;
 
@@ -236,14 +236,16 @@ class ETransactions extends PaymentModule
 
         // Load methods
         $methods = $this->getHelper()->getActivePaymentMethods();
-        $debitTypeForCard = $this->getConfig()->getDebitTypeForCard();
+        // [3.0.9] Remove filtering
+        // $debitTypeForCard = $this->getConfig()->getDebitTypeForCard();
         $recurringCards = array();
         $cards = array();
         foreach ($methods as $method) {
             // Remove non compatible cards
-            if (0 === (int)$method['debit_'.$debitTypeForCard]) {
-                continue;
-            }
+            // [3.0.9] Remove filtering
+            // if (0 === (int)$method['debit_'.$debitTypeForCard]) {
+            //     continue;
+            // }
 
             $params = array(
                 'a' => 'r',
@@ -319,14 +321,16 @@ class ETransactions extends PaymentModule
 
         // Load methods
         $methods = $this->getHelper()->getActivePaymentMethods();
-        $debitTypeForCard = $this->getConfig()->getDebitTypeForCard();
+        // [3.0.9] Remove filtering
+        // $debitTypeForCard = $this->getConfig()->getDebitTypeForCard();
         $recurringCards = array();
         $cards = array();
         foreach ($methods as $method) {
             // Remove non compatible cards
-            if (0 === (int)$method['debit_'.$debitTypeForCard]) {
-                continue;
-            }
+            // [3.0.9] Remove filtering
+            // if (0 === (int)$method['debit_'.$debitTypeForCard]) {
+            //     continue;
+            // }
 
             $params = array(
                 'a' => 'r',
@@ -390,14 +394,16 @@ class ETransactions extends PaymentModule
 
         // Load methods
         $methods = $this->getHelper()->getActivePaymentMethods();
-        $debitTypeForCard = $this->getConfig()->getDebitTypeForCard();
+        // [3.0.9] Remove filtering
+        // $debitTypeForCard = $this->getConfig()->getDebitTypeForCard();
         $recurringCards = array();
         $cards = array();
         foreach ($methods as $method) {
             // Remove non compatible cards
-            if (0 === (int)$method['debit_'.$debitTypeForCard]) {
-                continue;
-            }
+            // [3.0.9] Remove filtering
+            // if (0 === (int)$method['debit_'.$debitTypeForCard]) {
+            //     continue;
+            // }
 
             $params = array(
                 'a' => 'r',

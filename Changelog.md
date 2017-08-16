@@ -1,5 +1,9 @@
 # Change Log
 
+## [3.0.9] - 2017-07-26
+### Modifications
+- Moyens de paiement Front Office : suppression filtrage compatibilité Type de débit / Moyen de paiement
+
 ## [3.0.8] - 2017-07-19
 ### Ajouts
 - Gestion paiements fractionnés (ANCV + paramètre Z): champ de configuration pour chaque moyen de paiement, traitement IPN spécifique, gestion paramètre Z
@@ -44,7 +48,7 @@
 - Compatibilité PrestaShop 1.7
 - Moyens de paiement MasterPass, Illicado, ANCV
 
-### Modifications
+### Modificationsd
 - Installation : vérification présence colonnes 'method' et 'carte_num' dans la table des commandes du module
 
 ## [3.0.4] - 2016-09-30
