@@ -13,7 +13,7 @@
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   3.0.8
+*  @version   3.0.10
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -171,7 +171,7 @@ class ETransactionsInstaller
         // CartLocker table
         $sql = 'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'etransactions_cart_locker` (
             `id_cart` INT(10) unsigned NOT NULL,
-            `id_transaction` VARCHAR(20) NULL,
+            `id_transaction` VARCHAR(20) NOT NULL,
             `date_add` datetime NULL,
             PRIMARY KEY (`id_cart`, `id_transaction`))
             ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8';

@@ -13,7 +13,7 @@
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   3.0.8
+*  @version   3.0.10
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -24,14 +24,11 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-function upgrade_module_3_0_8($object)
+function upgrade_module_3_0_10($object)
 {
-    // Champ pour stocker le type de paiement et le numéro de carte
     if (version_compare(_PS_VERSION_, '1.5', '>=')) {
         $sql = array();
-        $sql[] = 'ALTER TABLE `'._DB_PREFIX_.'etransactions_card` ADD `mixte` INT(1) NULL DEFAULT 0 AFTER `remboursement`';
-        $sql[] = 'UPDATE `'._DB_PREFIX_.'etransactions_card` SET `mixte` = 1 WHERE (`type_card` = "ANCV")';
-        $sql[] = 'ALTER TABLE `'._DB_PREFIX_.'etransactions_cart_locker` ADD `id_transaction` VARCHAR(20) NULL AFTER `id_cart`';
+        $sql[] = 'ALTER TABLE `'._DB_PREFIX_.'etransactions_cart_locker` CHANGE `id_transaction` `id_transaction` VARCHAR(20) NOT NULL';
         $sql[] = 'ALTER TABLE `'._DB_PREFIX_.'etransactions_cart_locker` DROP PRIMARY KEY';
         $sql[] = 'ALTER TABLE `'._DB_PREFIX_.'etransactions_cart_locker` ADD PRIMARY KEY (`id_cart`, `id_transaction`)';
 

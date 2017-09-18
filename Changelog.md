@@ -1,5 +1,9 @@
 # Change Log
 
+## [3.0.10] - 2017-08-31
+### Corrections
+- CartLocker : correction sur champ 'id_transaction' non requis
+
 ## [3.0.9] - 2017-07-26
 ### Modifications
 - Moyens de paiement Front Office : suppression filtrage compatibilité Type de débit / Moyen de paiement
@@ -48,7 +52,7 @@
 - Compatibilité PrestaShop 1.7
 - Moyens de paiement MasterPass, Illicado, ANCV
 
-### Modificationsd
+### Modifications
 - Installation : vérification présence colonnes 'method' et 'carte_num' dans la table des commandes du module
 
 ## [3.0.4] - 2016-09-30
