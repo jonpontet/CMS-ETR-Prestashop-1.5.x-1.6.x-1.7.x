@@ -13,7 +13,7 @@
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   3.0.10
+*  @version   3.0.13
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -46,7 +46,7 @@ class ETransactions extends PaymentModule
 
         $this->name = 'etransactions';
         $this->tab = 'payments_gateways';
-        $this->version = '3.0.10';
+        $this->version = '3.0.12';
         $this->author = 'E-Transactions';
         $this->bootstrap = true;
 
@@ -56,6 +56,7 @@ class ETransactions extends PaymentModule
 
         $this->displayName = 'E-Transactions';
         $this->description = $this->l('In one integration, offer many payment methods, get a customized secure payment page, multi-lingual and multi-currency and offer debit on delivery or in 3 installments without charges for your customers.');
+        $this->controllers = array('redirect','validation');
     }
 
     public function getConfig()
@@ -121,6 +122,12 @@ class ETransactions extends PaymentModule
     public function getPath()
     {
         return $this->_path;
+    }
+    
+    public function getRedirPath()
+    {
+        $base = Tools::getHttpHost(true, false).__PS_BASE_URI__;
+        return $base.= 'index.php?fc=module&module=etransactions&controller=redirect&a=r';
     }
 
     public function hookAdminOrder($params)
@@ -333,7 +340,7 @@ class ETransactions extends PaymentModule
             // }
 
             $params = array(
-                'a' => 'r',
+//                 'a' => 'r',
                 'method' => $method['id_card'],
             );
 
@@ -344,7 +351,8 @@ class ETransactions extends PaymentModule
                 'payment' => $method['type_payment'],
                 'card' => $method['type_card'],
                 'label' => $method['label'],
-                'url' => $this->getPath().'?'.$params,
+//                 'url' => $this->getPath().'?'.$params,
+                'url' => $this->getRedirPath().'&'.$params,
                 'image' => $this->getMethodImageUrl($method['type_card']),
             );
             $cards[] = $card;
@@ -383,6 +391,16 @@ class ETransactions extends PaymentModule
         return $paymentOptions;
     }
 
+    /**
+     * [hookPaymentOptions description]
+     *
+     * 3.0.11 Add logo
+     *
+     * @since    3.0.5
+     * @version  3.0.11
+     * @param    array $params
+     * @return   PrestaShop\PrestaShop\Core\Payment\PaymentOption[]
+     */
     public function hookPaymentOptions($params)
     {
         // return array();
@@ -406,7 +424,7 @@ class ETransactions extends PaymentModule
             // }
 
             $params = array(
-                'a' => 'r',
+//                 'a' => 'r',
                 'method' => $method['id_card'],
             );
 
@@ -417,7 +435,8 @@ class ETransactions extends PaymentModule
                 'payment' => $method['type_payment'],
                 'card' => $method['type_card'],
                 'label' => $this->l('Pay by').' '.$method['label'],
-                'url' => $this->getPath().'?'.$params,
+//                 'url' => $this->getPath().'?'.$params,
+                'url' => $this->getRedirPath().'&'.$params,
                 'image' => $this->getMethodImageUrl($method['type_card']),
             );
             $cards[] = $card;
@@ -429,14 +448,22 @@ class ETransactions extends PaymentModule
             $cardTypes[] = $method['type_card'];
         }
 
+        $displayLogo = false;
+        $paymentOption = new PrestaShop\PrestaShop\Core\Payment\PaymentOption();
+        if (is_callable(array($paymentOption, 'setLogo'))) {
+            $displayLogo = true;
+        }
+
         // Create payment option for each allowed card
         foreach ($cards as $card) {
             $paymentOption = new PrestaShop\PrestaShop\Core\Payment\PaymentOption();
             $paymentOption->setCallToActionText($card['label'])
                 ->setAction($card['url'])
                 ->setAdditionalInformation('')
-                // ->setAdditionalInformation($this->fetch('module:ps_checkpayment/views/templates/front/payment_infos.tpl'))
             ;
+            if ($displayLogo) {
+                $paymentOption->setLogo($card['image']);
+            }
             $paymentOptions[] = $paymentOption;
         }
 
@@ -448,8 +475,10 @@ class ETransactions extends PaymentModule
                     $paymentOption->setCallToActionText($card['label'].' '.$this->l('card 3 times without fees'))
                         ->setAction($card['url'].'&recurring=1')
                         ->setAdditionalInformation('')
-                        // ->setAdditionalInformation($this->fetch('module:ps_checkpayment/views/templates/front/payment_infos.tpl'))
                     ;
+                    if ($displayLogo) {
+                        $paymentOption->setLogo($card['image']);
+                    }
                     $paymentOptions[] = $paymentOption;
                 }
             }
@@ -462,7 +491,7 @@ class ETransactions extends PaymentModule
     {
         if (_PS_VERSION_ < '1.4') {
             $this->context->smarty->currentTemplate = $name;
-        } else if (_PS_VERSION_ < '1.5') {
+        } elseif (_PS_VERSION_ < '1.5') {
             $views = 'views/templates/';
             if (@filemtime(dirname(__FILE__) . '/' . $name)) {
                 return $this->display(__FILE__, $name);
@@ -791,6 +820,12 @@ class ETransactions extends PaymentModule
 
     /**
      * On IPN call for a standard payment
+     *
+     * 3.0.11 Add CC information
+     *
+     * @version  3.0.11
+     * @param    Cart $cart
+     * @param    string[] $params
      */
     public function onStandardIPNSuccess(Cart $cart, array $params)
     {
@@ -822,7 +857,7 @@ class ETransactions extends PaymentModule
         $this->logDebug(sprintf('Cart %d: Validating order', $cart->id));
         try {
             $paymentName = $this->getHelper()->getDisplayName($this->displayName, $params['cardType']);
-            $result = parent::validateOrder($cart->id, $state, $amount, $paymentName, $message, array('transaction_id' => $params['transaction']), null, false, $cart->secure_key);
+            $result = parent::validateOrder($cart->id, $state, $amount, $paymentName, $message, array('transaction_id' => $params['transaction']), null, $cart->id_currency, $cart->secure_key);
         } catch (Exception $e) {
             $this->logFatal(sprintf('Cart %d: Error validating PrestaShop order:', $cart->id, $e->getMessage()));
         }
@@ -834,13 +869,23 @@ class ETransactions extends PaymentModule
 
         $this->logDebug(sprintf('Cart %d: Order %d validated, creating details', $cart->id, $this->currentOrder));
         $order = new Order($this->currentOrder);
+        // Create E-Transactions payment
         $this->getHelper()->addOrderPayment($order, $type, $params, 'E-Transactions');
+        // Update payment CC information
+        $this->getHelper()->updatePSOrderPayment($order, $params);
+
         $this->logDebug(sprintf('Cart %d: Order %d / %s', $cart->id, $order->id, $message));
     }
 
     /**
      * On IPN call for a mixed payment
-     * [3.0.8]
+     *
+     * 3.0.11 Add CC information, handle 'authorization' debit type, backup total_paid_real (modified by $order->addOrderPayment)
+     *
+     * @since    3.0.8
+     * @version  3.0.11
+     * @param    Cart $cart
+     * @param    string[] $params
      */
     public function onMixedIPNSuccess(Cart $cart, array $params)
     {
@@ -869,6 +914,15 @@ class ETransactions extends PaymentModule
                 $message .= $this->l('No more capture is pending.') . "\r\n";
             }
 
+            if ($this->_config->getDebitType() == 'receive') {
+                $type = 'authorization';
+                $message = $this->l('Payment was authorized by PaymentPlatform.');
+            } else {
+                $type = 'capture';
+                $message = $this->l('Payment was authorized and captured by PaymentPlatform.');
+            }
+
+
             // [3.0.4] Fix Context Error in Mail::Send() PS < 1.5.5
             if ((Context::getContext()->link instanceof Link) === false) {
                 Context::getContext()->link = new Link();
@@ -890,27 +944,22 @@ class ETransactions extends PaymentModule
             $this->logDebug(sprintf('Cart %d: Order %d validated, creating details', $cart->id, $this->currentOrder));
             $order = new Order($this->currentOrder);
 
-            // Update payment amount
-            $orderPaymentFound = false;
-            $orderPayments = OrderPayment::getByOrderReference($order->reference);
-            if (count($orderPayments) != 0) {
-                foreach ($orderPayments as $orderPayment) {
-                    if ($orderPayment->transaction_id == $params['transaction']) {
-                        $orderPayment->amount = $amount;
-                        if ($orderPayment->update()) {
-                            $orderPaymentFound = true;
-                        } else {
-                            $this->logFatal(sprintf('Cart %d: Problem updating real payment amount %d', $cart->id, $amount));
-                        }
-                    }
+            // Update payment amount, CC information
+            $this->getHelper()->updatePSOrderPayment($order, $params);
+            $orderPayment = $this->getHelper()->getPSOrderPayment($order->reference, $params['transaction']);
+            if (false !== $orderPayment) {
+                $orderPayment->amount = $amount;
+                if ($orderPayment->update()) {
+                    $orderPaymentFound = true;
+                } else {
+                    $this->logFatal(sprintf('Cart %d: Problem updating real payment amount %d', $cart->id, $amount));
                 }
-            }
-            if (!$orderPaymentFound) {
+            } else {
                 $this->logFatal(sprintf('Cart %d: No payment found to be updated for real payment amount %d', $cart->id, $amount));
             }
 
             // Save payment information
-            $this->getHelper()->addOrderPayment($order, 'capture', $params, 'E-Transactions');
+            $this->getHelper()->addOrderPayment($order, $type, $params, 'E-Transactions');
 
             // $this->getHelper()->addOrderNote($order, $message);
             $this->logDebug(sprintf('Cart %d: Order %d / %s', $cart->id, $order->id, $message));
@@ -950,11 +999,20 @@ class ETransactions extends PaymentModule
                     break;
                 }
             }
-            // Add OrderPayment
+            // Create E-Transactions payment
+            $order_total_paid_real = $order->total_paid_real;
             $paymentName = $this->getHelper()->getDisplayName($this->displayName, $params['cardType']);
             if (!$order->addOrderPayment($amount, $paymentName, $params['transaction'], null, null, $orderInvoice)) {
                 $this->logFatal(sprintf('Cart %d: Problem creating new payment for amount %d', $cart->id, $amount));
             }
+            $order->total_paid_real = $order_total_paid_real;
+            if (!$order->update()) {
+                $this->logFatal(sprintf('Cart %d: Problem updating $order->total_paid_real %f', $cart->id, $order->total_paid_real));
+            } else {
+                $this->logDebug(sprintf('Cart %d: Updated $order->total_paid_real %f', $cart->id, $order->total_paid_real));
+            }
+            // Update payment CC information
+            $this->getHelper()->updatePSOrderPayment($order, $params);
 
             // Info
             $message = sprintf($this->l('New payment capture of %s %s done.'), sprintf($amountFormat, $amount), $currency->sign) . "\r\n";
@@ -979,6 +1037,12 @@ class ETransactions extends PaymentModule
 
     /**
      * On IPN call for a recurring payment
+     *
+     * 3.0.11 Add CC information
+     *
+     * @version  3.0.11
+     * @param    Cart $cart
+     * @param    string[] $params
      */
     public function onThreetimeIPNSuccess(Cart $cart, array $params)
     {
@@ -1033,6 +1097,8 @@ class ETransactions extends PaymentModule
             // Save payment information
             $this->getHelper()->addOrderPayment($order, 'capture', $params, 'E-TransactionsRecurring');
             $this->getHelper()->addOrderRecurringDetails($order, $platformAmount);
+            // Update payment CC information
+            $this->getHelper()->updatePSOrderPayment($order, $params);
 //            $this->getHelper()->addOrderNote($order, $message);
             $this->logDebug(sprintf('Cart %d: Order %d / %s', $cart->id, $order->id, $message));
 
@@ -1048,9 +1114,7 @@ class ETransactions extends PaymentModule
             );
 
             Mail::Send(intval($order->id_lang), 'payment_recurring', $title, $varsTpl, $customer->email, $customerName, null, null, null, null, dirname(__FILE__) . '/mails/');
-        }
-
-        // Other payments
+        } // Other payments
         else {
             $order = new Order($orderId);
             $details = $this->getHelper()->getOrderRecurringDetails($orderId);

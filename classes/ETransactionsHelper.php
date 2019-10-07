@@ -13,7 +13,7 @@
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   3.0.8
+*  @version   3.0.12
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -250,6 +250,16 @@ class ETransactionsHelper extends ETransactionsAbstract
 
     private $_transactionId = null;
 
+    /**
+     * 3.0.12 Compatibilité Curl 7.6.2
+     *
+     * @version  3.0.12
+     *
+     * @param  String  $url
+     * @param  array $fields
+     *
+     * @return array()
+     */
     private function _curl($url, $fields)
     {
         $ch = curl_init();
@@ -273,7 +283,7 @@ class ETransactionsHelper extends ETransactionsAbstract
         $result = preg_split('/(\r\r|\n\n|\r\n\r\n)/', $result, 2);
         $data = count($result) == 2 ? $result[1] : null;
         $headers = explode("\r\n", $result[0]);
-        if (preg_match('#^HTTP/[0-9.]+ ([0-9]+)(.*)$#', array_shift($headers), $matches)) {
+        if (preg_match('#^HTTP/(1\.0|1\.1|2) ([0-9]{3}) (.*)$#i', array_shift($headers), $matches)) {
             $code = intval($matches[1]);
             $status = trim($matches[2]);
         } else {
@@ -289,6 +299,22 @@ class ETransactionsHelper extends ETransactionsAbstract
         );
     }
 
+    /**
+     * Direct call
+     *
+     * 3.0.11 CB55: rank on 3 positions
+     *
+     * @version  3.0.11
+     *
+     * @param  Order  $order
+     * @param  string $type
+     * @param  string $trxId
+     * @param  string $callId
+     * @param  string $amount
+     * @param  string $cardType
+     *
+     * @return array()
+     */
     private function _callDirect(Order $order, $type, $trxId, $callId, $amount, $cardType)
     {
         $customer = new Customer($order->id_customer);
@@ -315,7 +341,7 @@ class ETransactionsHelper extends ETransactionsAbstract
             'NUMAPPEL' => sprintf('%010d', $callId),
             'NUMQUESTION' => sprintf('%010d', time()),
             'NUMTRANS' => sprintf('%010d', $trxId),
-            'RANG' => sprintf('%02d', $this->getConfig()->getRank()),
+            'RANG' => sprintf('%03d', $this->getConfig()->getRank()),
             'REFERENCE' => $order->id_cart.' - '.$this->getBillingName($customer),
             'SITE' => sprintf('%07d', $this->getConfig()->getSite()),
             'TYPE' => $type,
@@ -387,6 +413,17 @@ class ETransactionsHelper extends ETransactionsAbstract
         $msg->add();
     }
 
+    /**
+     * [addOrderPayment description]
+     *
+     * 3.0.11 Check whether 'firstNumbers' and 'lastNumbers' variables are set
+     *
+     * @version  3.0.11
+     * @param    Order  $order  [description]
+     * @param    [type] $type   [description]
+     * @param    [type] $params [description]
+     * @param    [type] $method [description]
+     */
     public function addOrderPayment(Order $order, $type, $params, $method)
     {
         if (method_exists('Cache', 'clean')) {
@@ -409,7 +446,7 @@ class ETransactionsHelper extends ETransactionsAbstract
                 'currency' => $currency->iso_code_num,
                 'payment_by' => $method,
                 'method' => Tools::substr($params['paymentType'], 0, 30),
-                'carte_num' => $params['firstNumbers'].'XXXX'.$params['lastNumbers'],
+                'carte_num' => (isset($params['firstNumbers']) ? $params['firstNumbers'] : '').(isset($params['lastNumbers']) ? 'XXXX'.$params['lastNumbers'] : ''),
                 'carte' => $params['cardType'],
                 'pays' => isset($params['country']) ? $params['country'] : '',
                 'ip' => $params['ip'],
@@ -442,10 +479,129 @@ class ETransactionsHelper extends ETransactionsAbstract
     }
 
     /**
-     * @param Order $order PrestaShop Order object
-     * @param array $card Card information
+     * [updatePSOrderPayment description]
+     *
+     * @since    3.0.11
+     * @version  3.0.11
+     *
+     * @param    [type] $order  [description]
+     * @param    [type] $params [description]
+     * @return   [type]         [description]
+     */
+    public function updatePSOrderPayment($order, $params)
+    {
+        $isCreditCard = true;
+        $orderPaymentCCFields = $this->getPSOrderPaymentCCFields();
+        foreach ($orderPaymentCCFields as $orderPaymentCCField) {
+            if (!isset($params[$orderPaymentCCField]) || empty($params[$orderPaymentCCField])) {
+                $isCreditCard = false;
+                break;
+            }
+        }
+
+        if ($isCreditCard) {
+            $orderPayment = $this->getPSOrderPayment($order->reference, $params['transaction']);
+            if (false !== $orderPayment) {
+                if ((isset($params['firstNumbers']) && isset($params['lastNumbers'])) && property_exists($orderPayment, 'card_number')) {
+                    $orderPayment->card_number = Tools::substr($params['firstNumbers'].'XXXXXX'.$params['lastNumbers'], 0, 30);
+                }
+                if (isset($params['cardType']) && property_exists($orderPayment, 'card_brand')) {
+                    $orderPayment->card_brand = $params['cardType'];
+                }
+                if (isset($params['validity']) && property_exists($orderPayment, 'card_expiration')) {
+                    $orderPayment->card_expiration = $params['validity'];
+                }
+
+                if (!$orderPayment->update()) {
+                    $this->logFatal(sprintf('Cart %d: Problem updating PrestaShop payment information', $cart->id));
+                    return false;
+                }
+
+            } else {
+                $this->logFatal(sprintf('Cart %d: No payment found to be updated', $order->id_cart));
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Retrieve PrestaShop OrderPayment from reference and transaction_id fields
+     *
+     * @since    3.0.11
+     * @version  3.0.11
+     *
+     * @param    string $orderReference
+     * @param    string $transactionId
+     * @return   OrderPayment|false
+     */
+    public function getPSOrderPayment($orderReference, $transactionId)
+    {
+        $found = false;
+
+        $orderPayments = OrderPayment::getByOrderReference($orderReference);
+        if (0 != count($orderPayments)) {
+            foreach ($orderPayments as $orderPayment) {
+                if ($transactionId == $orderPayment->transaction_id) {
+                    return $orderPayment;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Retrieve PrestaShop OrderPayment from reference for mixed payments
+     *
+     * @since    3.0.11
+     * @version  3.0.11
+     *
+     * @param    string $orderReference
+     * @return   array|false
+     */
+    public function getPSOrderPaymentMixed($orderReference)
+    {
+        $orderPayments = OrderPayment::getByOrderReference($orderReference);
+        if (1 < count($orderPayments)) {
+            $payments = array();
+            // First payment considered as the mixed one
+            $payments['mixed'] = $orderPayments[0];
+            // Second payment considered as the CC additional one
+            $payments['cc'] = $orderPayments[1];
+
+            return $payments;
+        }
+
+        return false;
+    }
+
+
+    /**
+     * Get fields for CC information
+     *
+     * @since    3.0.11
+     * @version  3.0.11
+     *
+     * @return   array
+     */
+    public function getPSOrderPaymentCCFields()
+    {
+        return array('firstNumbers', 'lastNumbers', 'cardType', 'validity');
+    }
+
+    /**
+     * Create form data
+     *
+     * 3.0.11 CB55: rank on 3 positions
+     *
+     * @version  3.0.11
+     *
+     * @param Order  $order PrestaShop Order object
+     * @param array  $card Card information
      * @param string $type one of standard ou threetime
-     * @param array $additionalParams
+     * @param array  $additionalParams
      * @return array
      */
     public function buildSystemParams(Cart $cart, array $card, $type, array $additionalParams = array())
@@ -455,7 +611,7 @@ class ETransactionsHelper extends ETransactionsAbstract
 
         // Parameters
         $base = Tools::getHttpHost(true, false).__PS_BASE_URI__;
-        $base .= 'modules/etransactions/index.php?t=';
+        $base .= 'index.php?fc=module&module=etransactions&controller=validation&t=';
         if ($type == 'threetime') {
             $base .= '3';
         } else {
@@ -470,7 +626,7 @@ class ETransactionsHelper extends ETransactionsAbstract
 
         // Merchant information
         $values['PBX_SITE'] = $this->getConfig()->getSite();
-        $values['PBX_RANG'] = substr(sprintf('%02d', $this->getConfig()->getRank()), -2);
+        $values['PBX_RANG'] = substr(sprintf('%03d', $this->getConfig()->getRank()), -3);
         $values['PBX_IDENTIFIANT'] = $this->getConfig()->getIdentifier();
 
         // Card information
@@ -505,7 +661,7 @@ class ETransactionsHelper extends ETransactionsAbstract
                         $delay = $this->getConfig()->getDelay();
                         if ($delay < 1) {
                             $delay = 1;
-                        } else if ($delay > 7) {
+                        } elseif ($delay > 7) {
                             $delay = 7;
                         }
                         $values['PBX_DIFF'] = sprintf('%02d', $delay);
@@ -689,7 +845,7 @@ class ETransactionsHelper extends ETransactionsAbstract
                 $response = $client->get($testUrl);
                 if (!is_array($response)) {
                     $this->logDebug(sprintf('  Invalid response type %s', gettype($response)));
-                } else if ($response['code'] != 200) {
+                } elseif ($response['status'] != 200) {
                     $this->logDebug(sprintf('  Invalid response code %s', $response['code']));
                 } else {
                     $this->logDebug(sprintf('  Valid url found: %s', $url));
@@ -886,20 +1042,21 @@ class ETransactionsHelper extends ETransactionsAbstract
         // return Tools::getRemoteAddr();
         // [2.2.2] Extended test on IPN IP in internal method
         $ipAddress = '';
-        if ($_SERVER['HTTP_CLIENT_IP'])
+        if ($_SERVER['HTTP_CLIENT_IP']) {
             $ipAddress = $_SERVER['HTTP_CLIENT_IP'];
-        else if($_SERVER['HTTP_X_FORWARDED_FOR'])
+        } elseif ($_SERVER['HTTP_X_FORWARDED_FOR']) {
             $ipAddress = $_SERVER['HTTP_X_FORWARDED_FOR'];
-        else if($_SERVER['HTTP_X_FORWARDED'])
+        } elseif ($_SERVER['HTTP_X_FORWARDED']) {
             $ipAddress = $_SERVER['HTTP_X_FORWARDED'];
-        else if($_SERVER['HTTP_FORWARDED_FOR'])
+        } elseif ($_SERVER['HTTP_FORWARDED_FOR']) {
             $ipAddress = $_SERVER['HTTP_FORWARDED_FOR'];
-        else if($_SERVER['HTTP_FORWARDED'])
+        } elseif ($_SERVER['HTTP_FORWARDED']) {
             $ipAddress = $_SERVER['HTTP_FORWARDED'];
-        else if($_SERVER['REMOTE_ADDR'])
+        } elseif ($_SERVER['REMOTE_ADDR']) {
             $ipAddress = $_SERVER['REMOTE_ADDR'];
-        else
+        } else {
             $ipAddress = 'UNKNOWN';
+        }
 
         return $ipAddress;
     }
@@ -1072,13 +1229,17 @@ class ETransactionsHelper extends ETransactionsAbstract
 
     /**
      * Try to retrieve CardType from IPN params
-     * [3.0.8]
+     *
+     * 3.0.11 Removed sleep, now on ETransactionsController
+     *
+     * @version  3.0.11
+     * @param    string $cardType
+     * @return   string Real payment method name
      */
     public function getRealPaymentMethodName($cardType)
     {
-        // ANCV: Sleep for next payments
+        // ANCV: additionnal CB payment received first
         if ('LIMOCB' == $cardType) {
-            sleep(6);
             return 'ANCV';
         }
 
@@ -1094,6 +1255,23 @@ class ETransactionsHelper extends ETransactionsAbstract
         if (!empty($result)) {
             $result = $result[0];
         }
+        return $result;
+    }
+
+    /**
+     * Get all mixed payment methods
+     *
+     * @since    3.0.11
+     * @version  3.0.11
+     * @return   array()
+     */
+    public function getMixedPaymentMethods()
+    {
+        $db = Db::getInstance();
+        $sql = 'SELECT `type_payment`, `type_card` FROM `%setransactions_card` WHERE `mixte` = 1';
+        $sql = sprintf($sql, _DB_PREFIX_);
+
+        $result = $db->executeS($sql);
         return $result;
     }
 
@@ -1137,15 +1315,37 @@ class ETransactionsHelper extends ETransactionsAbstract
     }
 
     /**
-     * @return 2 if call error, 1 if payment platform error, 0 if success
+     * [makeCaptureAll description]
+     *
+     * 3.0.11 Mixed payment method management
+     *
+     * @version  3.0.11
+     * @param    Order   $order       [description]
+     * @param    array   $details     [description]
+     * @param    boolean $changestate [description]
+     * @return   2 if call error, 1 if payment platform error, 0 if success
      */
     public function makeCaptureAll(Order $order, array $details, $changestate = true)
     {
         $this->logDebug(sprintf('Order %d: capture all', $order->id));
 
+        // Retrieve method
+        $method = $this->getHelper()->getPaymentMethod($details['carte']);
+
+        // Check if mixed payment method
+        $isMixed = false;
+        if (1 == $method['mixte']) {
+            // Get mixed OrderPayment
+            $orderPayments = $this->getPSOrderPaymentMixed($order->reference);
+            if (false != $orderPayments) {
+                $isMixed = true;
+            }
+        }
+
         // Transaction informations
         $trxId = $details['id_transaction'];
         $callId = $details['num_appel'];
+
 
         // Refund partial (?)
         $partialRefund = 0;
@@ -1155,10 +1355,6 @@ class ETransactionsHelper extends ETransactionsAbstract
         }
 
         // Amount to capture
-        // $cart = new Cart($order->id_cart);
-        // $amount = $cart->getOrderTotal();
-        // Tmp : use of Order instead Cart
-        // $amount = $order->getOrdersTotalPaid();
         $amountScale = $this->getCurrencyScale($order);
         $amount = ((int)$details['amount']) / $amountScale;
 
@@ -1175,6 +1371,12 @@ class ETransactionsHelper extends ETransactionsAbstract
             }
         }
 
+        // Mixed payment: adapt transaction_id and amount
+        if ($isMixed) {
+            $trxId = $orderPayments['cc']->transaction_id;
+            $amount -= $orderPayments['mixed']->amount;
+        }
+
         // Capture there are more than 7 days?
         if (strtotime($order->date_add) <= mktime(23, 59, 59, date('m'), date('d') - 7, date('Y'))) {
             $this->logDebug(sprintf('Order %d: reauthorization required', $order->id));
@@ -1189,7 +1391,7 @@ class ETransactionsHelper extends ETransactionsAbstract
             // Call error
             $this->logError(sprintf('Order %d: E-Transactions call error', $order->id));
             return 2;
-        } else if ($response['CODEREPONSE'] != '00000') {
+        } elseif ($response['CODEREPONSE'] != '00000') {
             // Payment platform error
             $this->logError(sprintf('Order %d: E-Transactions returned an error of %s', $order->id, $response['CODEREPONSE']));
             $message = $this->l('Capture operation:').chr(10).chr(13);
@@ -1208,6 +1410,11 @@ class ETransactionsHelper extends ETransactionsAbstract
         $message .= $this->l('Ref.:').' '.$response['NUMTRANS'].chr(10).chr(13);
         $message .= $this->l('Capture amount:').' '.($amount - $partialRefund).' '.$currency->sign.chr(10).chr(13);
         $this->addOrderNote($order, $message);
+
+        // Mixed payment: re-adapt amount to keep same based amount in E-Transactions table
+        if ($isMixed) {
+            $amount += $orderPayments['mixed']->amount;
+        }
 
         // Update database
         $sql = 'UPDATE `%setransactions_order` SET `payment_status` = "capture",'
@@ -1275,7 +1482,7 @@ class ETransactionsHelper extends ETransactionsAbstract
             // Call error
             $this->logError(sprintf('Order %d: E-Transactions call error', $order->id));
             return 2;
-        } else if ($response['CODEREPONSE'] != '00000') {
+        } elseif ($response['CODEREPONSE'] != '00000') {
             // Payment platform error
             $this->logError(sprintf('Order %d: E-Transactions returned an error of %s', $order->id, $response['CODEREPONSE']));
             $message = $this->l('PaymentPlatform capture amount:').chr(10).chr(13);
@@ -1318,10 +1525,31 @@ class ETransactionsHelper extends ETransactionsAbstract
     }
 
     /**
-     * @return 2 if call error, 1 if payment platform error, 0 if success
+     * [makeRefundAll description]
+     *
+     * 3.0.11 Mixed payment method management
+     *
+     * @version  3.0.11
+     * @param    Order   $order       [description]
+     * @param    array   $details     [description]
+     * @param    boolean $changestate [description]
+     * @return   2 if call error, 1 if payment platform error, 0 if success
      */
     public function makeRefundAll(Order $order, array $details)
     {
+        // Retrieve method
+        $method = $this->getHelper()->getPaymentMethod($details['carte']);
+
+        // Check if mixed payment method
+        $isMixed = false;
+        if (1 == $method['mixte']) {
+            // Get mixed OrderPayment
+            $orderPayments = $this->getPSOrderPaymentMixed($order->reference);
+            if (false != $orderPayments) {
+                $isMixed = true;
+            }
+        }
+
         // Transaction informations
         $trxId = $details['id_transaction'];
         $callId = $details['num_appel'];
@@ -1338,6 +1566,12 @@ class ETransactionsHelper extends ETransactionsAbstract
         // $amount -= $partialRefund;
         $amount = floatval($details['amount']) / $amountScale;
 
+        // Mixed payment: change transaction_id and amount
+        if ($isMixed) {
+            $trxId = $orderPayments['cc']->transaction_id;
+            $details['id_transaction'] = $trxId;
+            $amount -= $orderPayments['mixed']->amount;
+        }
 
         // $response = $this->_makeRefund($order, $trxId, $callId, $amount, $details['carte']);
         $result = $this->processPaymentModified($order, $details, $amount);
@@ -1441,7 +1675,7 @@ class ETransactionsHelper extends ETransactionsAbstract
         if (empty($response)) {
             // Call error
             return 2;
-        } else if ($response['CODEREPONSE'] != '00000') {
+        } elseif ($response['CODEREPONSE'] != '00000') {
             // Payment platform error
             $message = $this->l('PaymentPlatform refund:').chr(10).chr(13);
             $message .= $this->l('Return code: error').' ['.$response['CODEREPONSE'].((!empty($response['COMMENTAIRE'])) ? ' - '.utf8_encode($response['COMMENTAIRE']) : '').']'.chr(10).chr(13);
@@ -1560,6 +1794,15 @@ class ETransactionsHelper extends ETransactionsAbstract
 
     /**
      * Process modification of amounts on an order
+     *
+     * 3.0.11 Mixed payment management (order / explicit amount)
+     *
+     * @version  3.0.11
+     * @param    Order $order
+     * @param    array $details
+     * @param    float $explicitAmount
+     * @param    bool $makeRefund
+     * @return   array()
      */
     public function processPaymentModified($order, $details, $explicitAmount = 0, $makeRefund = true)
     {
@@ -1573,6 +1816,30 @@ class ETransactionsHelper extends ETransactionsAbstract
         $amountInitial = ((int)$details['initial_amount']) / $amountScale;
         $amountCurrent = ((int)$details['amount']) / $amountScale;
 
+/*
+ * Allow refund on mixed payment method with allowed refundable amount
+        // Retrieve method
+        $method = $this->getHelper()->getPaymentMethod($details['carte']);
+
+        // Check if mixed payment method
+        $isMixed = false;
+        if (1 == $method['mixte']) {
+            // Get mixed OrderPayment
+            $orderPayments = $this->getPSOrderPaymentMixed($order->reference);
+            if (false != $orderPayments) {
+                $isMixed = true;
+            }
+        }
+
+        // Mixed payment: change amount and explicitAmount really available
+        if ($isMixed) {
+            $amountCurrent -= $orderPayments['mixed']->amount;
+            if ($explicitAmount != 0 && $explicitAmount > $amountCurrent) {
+                $explicitAmount = $amountCurrent;
+            }
+        }
+*/
+
         if ($explicitAmount != 0) {
             $actionType = 'refund';
         }
@@ -1582,7 +1849,6 @@ class ETransactionsHelper extends ETransactionsAbstract
                 'status' => 0,
                 'error' => 'New order amount exceeding the initial amount',
             );
-
         } elseif (($amountOrder < $amountPaid) || (($amountOrder > $amountPaid) && ($amountOrder < $amountInitial)) || ('refund' == $actionType)) {
             $this->logDebug(sprintf('Cart %d: Order %d / %s', $order->id_cart, $order->id, 'Order amount changed : '.$amountPaid.' => '.$amountOrder));
 
@@ -1595,29 +1861,25 @@ class ETransactionsHelper extends ETransactionsAbstract
                 $newAmount = $amountOrder;
                 if ($amountOrder < $amountPaid) {
                     $operationAmount = ($amountPaid - $amountOrder) * -1;
-                    $this->logDebug(sprintf('Cart %d: Order %d / %s', $order->id_cart, $order->id, 'Refund : '.$operationAmount));
-                }
-                // Rebill
+                    $this->logDebug(sprintf('Cart %d: Order %d / %s', $order->id_cart, $order->id, 'Authorization - Refund: '.$operationAmount));
+                } // Rebill
                 elseif ($amountOrder < $amountInitial) {
                     $operationAmount = $amountOrder - $amountCurrent;
-                    $this->logDebug(sprintf('Cart %d: Order %d / %s', $order->id_cart, $order->id, 'Rebill < initial : '.$operationAmount));
+                    $this->logDebug(sprintf('Cart %d: Order %d / %s', $order->id_cart, $order->id, 'Authorization - Rebill < initial: '.$operationAmount));
                 } else {
                     $operationAmount = $amountInitial - $amountCurrent;
                     $newAmount = $amountInitial;
-                    $this->logDebug(sprintf('Cart %d: Order %d / %s', $order->id_cart, $order->id, 'Rebill > initial : '.$operationAmount.' - amount: '.$newAmount));
+                    $this->logDebug(sprintf('Cart %d: Order %d / %s', $order->id_cart, $order->id, 'Authorization - Rebill > initial: '.$operationAmount.' - amount: '.$newAmount));
 
                     $order->total_paid_real = ($newAmount < 0) ? 0 : $newAmount;
                     $order->update();
                 }
 
                 return $this->updatePayments($order, $details, $newAmount, $operationAmount, $amountScale, $currency);
-            }
-            // Direct Debit or N Times
-            elseif (($order->hasBeenPaid() && $this->canRefund($orderId)) || $this->isRecurring($orderId))
-            {
-                // Only Refund allowed
-                if(($amountOrder < $amountPaid) || ('refund' == $actionType))
-                {
+            } // Direct Debit or N Times
+            elseif (($order->hasBeenPaid() && $this->canRefund($orderId)) || $this->isRecurring($orderId)) {
+            // Only Refund allowed
+                if (($amountOrder < $amountPaid) || ('refund' == $actionType)) {
                     if ('refund' == $actionType) {
                         $operationAmount = ($explicitAmount) * -1;
                         if ($this->isRecurring($orderId)) {
@@ -1628,13 +1890,15 @@ class ETransactionsHelper extends ETransactionsAbstract
                             // $newAmount = $amountPaid + $operationAmount;
                             $newAmount = $amountCurrent + $operationAmount;
                         }
-                        // $order->total_paid_real = ($newAmount < 0) ? 0 : $newAmount;
-                        // $order->update();
+                        $this->logDebug(sprintf('Cart %d: Order %d / %s', $order->id_cart, $order->id, 'Refund action type: '.$operationAmount.' - amount: '.$newAmount));
+                            // $order->total_paid_real = ($newAmount < 0) ? 0 : $newAmount;
+                            // $order->update();
                     } else {
                         $operationAmount = ($amountPaid - $amountOrder) * -1;
                         // [2.2.2] Captured amount can be different from the order paid amount, use of the captured amount which is the official one
                         // $newAmount = $amountOrder;
                         $newAmount = $amountCurrent + $operationAmount;
+                        $this->logDebug(sprintf('Cart %d: Order %d / %s', $order->id_cart, $order->id, 'Rebill < initial: '.$operationAmount.' - amount: '.$newAmount));
                     }
 
                     if ($makeRefund) {
@@ -1684,7 +1948,6 @@ class ETransactionsHelper extends ETransactionsAbstract
         . ' WHERE `id_order` = %d';
         $sql = sprintf($sql, _DB_PREFIX_, round($newAmount * $amountScale), $order->id);
         if (Db::getInstance()->execute($sql)) {
-
             if (version_compare(_PS_VERSION_, '1.5', '>=')) {
                 // Save new Order total_paid_real to avoid loop (Order::update in Order::addOrderPayment function)
                 // $order->total_paid_real = $newAmount;
@@ -1692,7 +1955,6 @@ class ETransactionsHelper extends ETransactionsAbstract
 
                 $orderPayments = OrderPayment::getByOrderReference($order->reference);
                 if (count($orderPayments) != 0) {
-
                     /* [2.2.0] Refund is no longer attached to invoice (credit slip)
                     // Retrieve OrderInvoice
                     $orderInvoice = null;
@@ -1782,6 +2044,17 @@ class ETransactionsHelper extends ETransactionsAbstract
         }
     }
 
+    /**
+     * [getDisplayName description]
+     *
+     * 3.0.11 Add payment method label management (option 3 and 4)
+     *
+     * @version  3.0.11
+     * @param    string $moduleName
+     * @param    string $paymentMethod
+     * @param    string|null $mode
+     * @return   string
+     */
     public function getDisplayName($moduleName, $paymentMethod, $mode = null)
     {
         $displayMode = Configuration::get('ETRANS_PAYMENT_DISPLAY', 0);
@@ -1791,6 +2064,19 @@ class ETransactionsHelper extends ETransactionsAbstract
             $name = $paymentMethod;
         } elseif (2 == $displayMode) {
             $name = $moduleName.' ['.$paymentMethod.']';
+        } elseif (3 == $displayMode || 4 == $displayMode) {
+            $method = $this->getPaymentMethod($paymentMethod);
+            if (false !== $method && isset($method['label'])) {
+                $label = $method['label'];
+            } else {
+                $label = $paymentMethod;
+            }
+
+            if (3 == $displayMode) {
+                $name = $label;
+            } else {
+                $name = $moduleName.' ['.$label.']';
+            }
         }
 
         // Add n times payment information

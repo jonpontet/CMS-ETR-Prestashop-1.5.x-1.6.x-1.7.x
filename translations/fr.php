@@ -13,7 +13,7 @@
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   3.0.8
+*  @version   3.0.11
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -117,7 +117,7 @@ $_MODULE['<{etransactions}prestashop>etransactionsadminconfig_03b20e20e097cee014
 $_MODULE['<{etransactions}prestashop>etransactionsadminconfig_a7d6475ec8993b7224d6facc8cb0ead6'] = 'Numéro de site';
 $_MODULE['<{etransactions}prestashop>etransactionsadminconfig_fd33abdf2ff42b08cc100b90874b3a54'] = 'Numéro de site (fourni par E-Transactions).';
 $_MODULE['<{etransactions}prestashop>etransactionsadminconfig_021da1b20f73dc252361a54d80497ef3'] = 'Numéro de rang';
-$_MODULE['<{etransactions}prestashop>etransactionsadminconfig_27eab08f804ed489952126bb4cad62f1'] = 'Numéro de rang (fourni par E-Transactions, les 2 derniers chiffres).';
+$_MODULE['<{etransactions}prestashop>etransactionsadminconfig_856d9f29fe5fea83516fddea01aff91a'] = 'Numéro de rang (fourni par E-Transactions).';
 $_MODULE['<{etransactions}prestashop>etransactionsadminconfig_29ee5d1ebcc033234938a5234f1f2075'] = 'Identifiant';
 $_MODULE['<{etransactions}prestashop>etransactionsadminconfig_dcf3cb3a6763129c8a903e956346c53e'] = 'Identifiant E-Transactions (fourni par E-Transactions).';
 $_MODULE['<{etransactions}prestashop>etransactionsadminconfig_9b808d1e9bccb91c8f45981e1e640e9b'] = 'Clé HMAC';
@@ -145,6 +145,8 @@ $_MODULE['<{etransactions}prestashop>etransactionsadminconfig_75dc895faf2eb3c6c3
 $_MODULE['<{etransactions}prestashop>etransactionsadminconfig_fe7aa1657c958c1eb65ee4f9c2df3c14'] = 'Module de paiement (exemple : ';
 $_MODULE['<{etransactions}prestashop>etransactionsadminconfig_9cdcbe880d24b2e86879d99b21ae3ccf'] = 'Moyen de paiement (exemple : ';
 $_MODULE['<{etransactions}prestashop>etransactionsadminconfig_23037a7595afa6d40abbb027475e5acb'] = 'Module et moyen de paiement (exemple : ';
+$_MODULE['<{etransactions}prestashop>etransactionsadminconfig_f170fafc5232e177ad4539db797e2d63'] = 'Libellé du moyen de paiement (exemple : ';
+$_MODULE['<{etransactions}prestashop>etransactionsadminconfig_424dff8ac9029b314d7d3228c149f4f7'] = 'Module et libellé du moyen de paiement (exemple : ';
 $_MODULE['<{etransactions}prestashop>etransactionsadminconfig_67f771ae4d4fd8d37e01e7e1bd586b1d'] = 'Automatisation des actions Back-Office';
 $_MODULE['<{etransactions}prestashop>etransactionsadminconfig_bda7c7e0806a963b58d418c36499221f'] = 'L\'automatisation des actions Back-Office va déclencher des remboursements pour chaque modification du montant de la commande (suppression de produit, modification de prix d\'un produit...).';
 $_MODULE['<{etransactions}prestashop>etransactionsadminorder_ab116d52ec2aa15f6cc3c5ff66deb399'] = 'Détails du paiement';
@@ -190,6 +192,7 @@ $_MODULE['<{etransactions}prestashop>etransactionsadminorder_cba030a50c8a99c7e22
 $_MODULE['<{etransactions}prestashop>etransactionsadminorder_7562c6b13c0f06f957ea2accbf55a914'] = 'Le montant à rembourser est trop élevé.';
 $_MODULE['<{etransactions}prestashop>etransactionsadminorder_d3346c6cd608b990fcb71b5a15c83f99'] = 'Consultez la documentation pour obtenir de l\'aide';
 $_MODULE['<{etransactions}prestashop>etransactionsadminorder_44cdd2788ef82e668dd74f24d332d026'] = 'Générer un remboursement E-Transactions';
+$_MODULE['<{etransactions}prestashop>etransactionsadminorder_a77a2e9ed912629c43a9d85277c60ae2'] = 'du complément par carte bancaire';
 $_MODULE['<{etransactions}prestashop>etransactionscontroller_a2774dd308f6939d7972a3d636648b5c'] = 'Le paiement a été annulé par l\'utilisateur sur la page de paiement E-Transactions.';
 $_MODULE['<{etransactions}prestashop>etransactionscontroller_3ffa86b923125b13ed710de4dfb45937'] = 'Paiement annulé';
 $_MODULE['<{etransactions}prestashop>etransactionscontroller_d87152f68d5707e82aeb2f870a23a0f1'] = 'Le client est de retour de la page de paiement E-Transactions.';

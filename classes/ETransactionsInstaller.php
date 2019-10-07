@@ -193,8 +193,7 @@ class ETransactionsInstaller
      */
     public function installETransactionsOrderStates($module)
     {
-        if (!$this->_isValidState(Configuration::get('ETRANS_ID_ORDER_STATE_NX')))
-        {
+        if (!$this->_isValidState(Configuration::get('ETRANS_ID_ORDER_STATE_NX'))) {
             $orderState = new OrderState();
             $orderState->name = array();
             foreach (Language::getLanguages() as $language) {
@@ -869,7 +868,8 @@ class ETransactionsInstaller
         }
     }
 
-    private function configurationToKeep() {
+    private function configurationToKeep()
+    {
         return array(
             'ETRANS_ID_ORDER_STATE_NX',
             'ETRANS_MIDDLE_STATE_NX',

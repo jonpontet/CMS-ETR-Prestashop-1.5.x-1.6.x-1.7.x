@@ -13,7 +13,7 @@
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   3.0.8
+*  @version   3.0.11
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -418,6 +418,8 @@ EOF;
             0 => $this->l('Payment module (ex: ').'E-Transactions)',
             1 => $this->l('Payment method (ex: ').'VISA)',
             2 => $this->l('Payment module and method (ex: ').'E-Transactions [VISA])',
+            3 => $this->l('Payment method label (ex: ').'Carte Visa)',
+            4 => $this->l('Payment module and method label (ex: ').'E-Transactions [Carte Visa])',
         );
         $w->formSelect(
             'ETRANS_PAYMENT_DISPLAY',
@@ -860,6 +862,15 @@ EOF;
         $w->js($js);
     }
 
+    /**
+     * [_writeSettingsBlock description]
+     *
+     * 3.0.11 CB55: rank on 3 positions
+     *
+     * @version  3.0.11
+     *
+     * @param  ETransactionsHtmlWriter $w
+     */
     private function _writeSettingsBlock(ETransactionsHtmlWriter $w)
     {
         $label = $this->l('Parameters');
@@ -896,7 +907,7 @@ EOF;
             'ETRANS_RANG',
             $this->l('Rank'),
             $rank,
-            $this->l('Rank number (provided by PaymentPlatform, last 2 digits).'),
+            $this->l('Rank number (provided by PaymentPlatform).'),
             40
         );
         $w->formText(

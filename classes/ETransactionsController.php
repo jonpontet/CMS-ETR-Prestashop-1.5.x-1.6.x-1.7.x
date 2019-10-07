@@ -13,7 +13,7 @@
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   3.0.8
+*  @version   3.0.11
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -115,7 +115,11 @@ class ETransactionsController extends ETransactionsAbstract
 
     /**
      * IPN proccessing
-     * [3.0.8] Mixed payment methods
+     *
+     * 3.0.11 Mixed payments: sleeps, check if mixed payment but not a mixed card_type (assume it is the additionnal payment)
+     * 3.0.8  Mixed payment methods
+     *
+     * @version  3.0.11
      */
     public function ipnAction()
     {
@@ -139,6 +143,13 @@ class ETransactionsController extends ETransactionsAbstract
 
             // [3.0.8] Try to retrieve Card from IPN params to process mixed payment methods
             if (array_key_exists('cardType', $params)) {
+
+                // [3.0.11] Mixed payment fixes on IPN calls
+                // ANCV: Sleep on CB for next payments
+                if ('LIMOCB' == $cardType) {
+                    sleep(6);
+                }
+
                 $cardType = $this->getHelper()->getRealPaymentMethodName($params['cardType']);
                 $method = $this->getHelper()->getPaymentMethod($cardType);
                 if (false !== $method) {
@@ -158,7 +169,22 @@ class ETransactionsController extends ETransactionsAbstract
                         // Check if several payments are expected
                         if ('1' !== $indexData[1]) {
                             $type = 'mixed';
-                            sleep(6);
+
+                            // [3.0.11] Check if it is an additionnal payment to make it processed after the real mixed one
+                            $mixedPaymentMethods = $this->getHelper()->getMixedPaymentMethods();
+                            $isMainMixed = false;
+                            if (false !== $mixedPaymentMethods) {
+                                foreach ($mixedPaymentMethods as $mixedPaymentMethod) {
+                                    if ($cardType == $mixedPaymentMethod['type_card']) {
+                                        $isMainMixed = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (!$isMainMixed) {
+                                sleep(10);
+                            }
                         }
                     }
                 }
@@ -200,7 +226,6 @@ class ETransactionsController extends ETransactionsAbstract
             $this->context->currency = new Currency($id_currency, null, $this->context->shop->id);
 
             if (in_array($params['error'], array('00000', '00200', '00201', '00300', '00301', '00302', '00303'))) {
-
                 if ($this->getHelper()->hasCartLocker($cart->id, $params['transaction'])) {
                     $message = sprintf('Cart %d: (IPN) Cart already being validated as order with the transaction %s.', $cart->id, $params['transaction']);
                     $this->logDebug($message);
@@ -230,7 +255,6 @@ class ETransactionsController extends ETransactionsAbstract
                         $message = sprintf('Cart %d: (IPN) "CartLocker" creation failed, cart probably already being validated as order.', $cart->id);
                         $this->logDebug($message);
                     }
-
                 }
             } else {
                 // Payment refused

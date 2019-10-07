@@ -19,36 +19,36 @@
 *  @link      http://www.e-transactions.fr/
 */
 
-$(document).ready(function()
-{
-	if (refundAvailable == 1) {
-		etransCreateCreditSlip();
+$(document).ready(function () {
 
-		$('#generateDiscount').on('click', function() {
-			etransToggleCreditSlip();
-		});
-		$('#generateCreditSlip').on('click', function() {
-			etransToggleCreditSlip();
-		});
-	}
+    if (refundAvailable == 1) {
+        etransCreateCreditSlip();
 
-	/**
-	 * Intercept Ajax calls for page reload on product modification or deletion
-	 */
-	$(document).ajaxSuccess(function(event, xhr, settings, data) {
-		if (typeof data !== 'undefined' && data !== null) {
-			if (typeof data.documents_html !== 'undefined' && data.documents_html !== null) {
-				window.location.reload(true);
-			}
-		}
-	});
+        $('#generateDiscount').on('click', function () {
+            etransToggleCreditSlip();
+        });
+        $('#generateCreditSlip').on('click', function () {
+            etransToggleCreditSlip();
+        });
+    }
+
+    /**
+     * Intercept Ajax calls for page reload on product modification or deletion
+     */
+    $(document).ajaxSuccess(function (event, xhr, settings, data) {
+        if (typeof data !== 'undefined' && data !== null) {
+            if (typeof data.documents_html !== 'undefined' && data.documents_html !== null) {
+                window.location.reload(true);
+            }
+        }
+    });
 
 
-	if ($('.alert-etransactions').length) {
-		$('html, body').animate({
-			scrollTop: ($('.alert-etransactions').offset().top - 150)
-		}, 2000);
-	}
+    if ($('.alert-etransactions').length) {
+        $('html, body').animate({
+            scrollTop: ($('.alert-etransactions').offset().top - 150)
+        }, 2000);
+    }
 });
 
 /**
@@ -56,15 +56,15 @@ $(document).ready(function()
  */
 function etransCreateCreditSlip()
 {
-	html =
-		'<p class="checkbox" id="etransRefundSpan" style="display: none;">'+
-			'<label for="etransRefund">'+
-				'<input type="checkbox" id="etransRefund" name="etransRefund" />'+
-				refundCheckboxText +
-			'</label>'+
-		'</p>';
+    html =
+        '<p class="checkbox" id="etransRefundSpan" style="display: none;">'+
+            '<label for="etransRefund">'+
+                '<input type="checkbox" id="etransRefund" name="etransRefund" />'+
+                refundCheckboxText +
+            '</label>'+
+        '</p>';
 
-	$('#spanShippingBack').after(html);
+    $('#spanShippingBack').after(html);
 
 }
 
@@ -74,14 +74,12 @@ function etransCreateCreditSlip()
  */
 function etransToggleCreditSlip()
 {
-	generateDiscount = $('#generateDiscount').attr("checked");
-	generateCreditSlip = $('#generateCreditSlip').attr("checked");
-	if (generateDiscount != 'checked' && generateCreditSlip == 'checked')
-	{
-		$('#etransRefundSpan').css('display', 'block');
-	}
-	else {
-		$('#etransRefundSpan input[type=checkbox]').attr("checked", false);
-		// $('#etransRefundSpan').css('display', 'none');
-	}
+    generateDiscount = $('#generateDiscount').attr("checked");
+    generateCreditSlip = $('#generateCreditSlip').attr("checked");
+    if (generateDiscount != 'checked' && generateCreditSlip == 'checked') {
+        $('#etransRefundSpan').css('display', 'block');
+    } else {
+        $('#etransRefundSpan input[type=checkbox]').attr("checked", false);
+        // $('#etransRefundSpan').css('display', 'none');
+    }
 }

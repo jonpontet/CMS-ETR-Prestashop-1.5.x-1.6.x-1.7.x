@@ -13,7 +13,7 @@
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   3.0.8
+*  @version   3.0.11
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -58,10 +58,10 @@ class ETransactionsAdminOrder extends ETransactionsAbstractAdmin
         // Payment mean
         $img = $this->getModule()->getMethodImageUrl(strtoupper($details['carte']));
         $text = sprintf('<img style="vertical-align:middle;" src="%s" />', $img);
-        if(isset($details['method']) && 'WALLET' == $details['method']) {
+        if (isset($details['method']) && 'WALLET' == $details['method']) {
             $img = $this->getModule()->getMethodImageUrl('PAYLIB');
             $text = sprintf('<img style="vertical-align:middle;" src="%s" />', $img).$text;
-		}
+        }
         $w->html(sprintf(
             $tpl,
             $this->l('Payment Method:'),
@@ -297,6 +297,13 @@ EOF;
         $this->_writeEndDetails($w, $details);
     }
 
+    /**
+     * Prints E-Transactions payment information
+     *
+     * @version  3.0.11
+     * @param    ETransactionsHtmlWriter $w       [description]
+     * @param    array                  $details [description]
+     */
     private function _writeRefundableDetails(ETransactionsHtmlWriter $w, array $details)
     {
         $this->_writeCommonDetails($w, $details);
@@ -308,6 +315,10 @@ EOF;
 
             case 'E-TransactionsRecurring':
                 $this->_writeRefundableRecurring($w, $details);
+                break;
+
+            case 'mixed':
+                $this->_writeRefundableMixed($w, $details);
                 break;
         }
 
@@ -402,19 +413,19 @@ EOF;
 
 
                 // Refund all amount
-                $w->html('<p class="left">');
-                $w->html(sprintf(
-                    '<form id="etrans_refund_all" method="post" action="%s">',
-                    $w->escape($_SERVER['REQUEST_URI'])
-                ));
-                $w->html(sprintf(
-                    '<input type="hidden" name="id_order" value="%d" />',
-                    $details['id_order']
-                ));
-                $w->html('<input type="hidden" name="order_action" value="refund_all" />');
-                $w->button($this->l('Refund total transaction'), 'submit');
-                $w->html('</form>');
-                $w->html('</p>');
+                    $w->html('<p class="left">');
+                    $w->html(sprintf(
+                        '<form id="etrans_refund_all" method="post" action="%s">',
+                        $w->escape($_SERVER['REQUEST_URI'])
+                    ));
+                    $w->html(sprintf(
+                        '<input type="hidden" name="id_order" value="%d" />',
+                        $details['id_order']
+                    ));
+                    $w->html('<input type="hidden" name="order_action" value="refund_all" />');
+                    $w->button($this->l('Refund total transaction'), 'submit');
+                    $w->html('</form>');
+                    $w->html('</p>');
 
 /*
                 // Refund item(s)
@@ -430,29 +441,29 @@ EOF;
                 }
 */
                 // Refund amount
-                $w->html('<p class="left">');
-                $w->html('<form id="etrans_refund_amount">');
-                $w->button($this->l('Refund of an amount'), 'submit');
-                $w->html('</form>');
-                $w->html('</p>');
+                    $w->html('<p class="left">');
+                    $w->html('<form id="etrans_refund_amount">');
+                    $w->button($this->l('Refund of an amount'), 'submit');
+                    $w->html('</form>');
+                    $w->html('</p>');
 
                 // Refund amount form
-                $w->html('<p class="left">');
-                $w->html(sprintf(
-                    '<form id="etrans_refund_amount_input" method="post" action="%s" style="display:none;">',
-                    $w->escape($_SERVER['REQUEST_URI'])
-                ));
-                $w->html(sprintf(
-                    '<input type="hidden" name="id_order" value="%d" />',
-                    $details['id_order']
-                ));
-                $w->html('<input type="hidden" name="order_action" value="refund_amount" />');
-                $w->html('<input type="text" name="amountRefund" value="" /> ');
-                $w->button($this->l('Refund this amount'), 'submit');
-                $w->html('</form>');
-                $w->html('</p>');
+                    $w->html('<p class="left">');
+                    $w->html(sprintf(
+                        '<form id="etrans_refund_amount_input" method="post" action="%s" style="display:none;">',
+                        $w->escape($_SERVER['REQUEST_URI'])
+                    ));
+                    $w->html(sprintf(
+                        '<input type="hidden" name="id_order" value="%d" />',
+                        $details['id_order']
+                    ));
+                    $w->html('<input type="hidden" name="order_action" value="refund_amount" />');
+                    $w->html('<input type="text" name="amountRefund" value="" /> ');
+                    $w->button($this->l('Refund this amount'), 'submit');
+                    $w->html('</form>');
+                    $w->html('</p>');
 
-                $js = <<<EOF
+                    $js = <<<EOF
 (function($) {
     $(document).ready(function() {
         $('#etrans_refund_all, #etrans_refund_amount_input').submit(function() {
@@ -463,15 +474,15 @@ EOF;
             return false;
         });
 EOF;
-                if (Configuration::get('PS_ORDER_RETURN')) {
-                    $js .= <<<EOF
+                    if (Configuration::get('PS_ORDER_RETURN')) {
+                        $js .= <<<EOF
         $('#etrans_refund_item').submit(function() {
             $('#desc-order-standard_refund').click();
             return false;
         });
 EOF;
-                }
-                $js .= <<<EOF
+                    }
+                    $js .= <<<EOF
         $('#etrans_refund_amount').submit(function() {
             $('#etrans_refund_amount_input').show('normal');
             return false;
@@ -479,11 +490,160 @@ EOF;
     });
 })(jQuery);
 EOF;
-                $w->js(sprintf($js, json_encode($this->l('Are you sure?'))));
+                    $w->js(sprintf($js, json_encode($this->l('Are you sure?'))));
             }
         }
     }
 
+    /**
+     * Refund form for mixed payment methods
+     *
+     * @since    3.0.11
+     * @version  3.0.11
+     * @param    ETransactionsHtmlWriter $w       [description]
+     * @param    array                  $details [description]
+     * @return   [type]                          [description]
+     */
+    private function _writeRefundableMixed(ETransactionsHtmlWriter $w, array $details)
+    {
+        $partialRefund = 0;
+        if (version_compare(_PS_VERSION_, '1.5', '>=')) {
+            $partialRefund = $this->getHelper()->getAmountPartialRefund($details['id_order']);
+        }
+
+        $order = new Order(intval($details['id_order']));
+        if (Validate::isLoadedObject($order)) {
+            $currency = new Currency(intval($order->id_currency));
+            $amountScale = $this->getHelper()->getCurrencyScale($order);
+
+            // $possibleRefund = (float)($details['amount'] - $details['refund_amount']) / $amountScale;
+            $possibleRefund = (float)($details['amount']) / $amountScale;
+
+            // Get mixed OrderPayment
+            $orderPayments = $this->getHelper()->getPSOrderPaymentMixed($order->reference);
+            if (false != $orderPayments) {
+                $possibleRefund -= $orderPayments['mixed']->amount;
+
+                $refundableTransactionId = $orderPayments['cc']->transaction_id;
+
+                if ($possibleRefund > 0) {
+                    $text = $this->l('The transaction can be refund many times');
+                    $w->html(sprintf('<p>%s</p>', $text));
+
+                    // [2.2.0] Use of Tools::displayPrice + only $possibleRefund
+                    // $tpl = '<p>%s %s %s</p>';
+                    $tpl = '<p>%s %s %s</p>';
+                    $w->html(sprintf(
+                        $tpl,
+                        $this->l('It is possible to repay'),
+                        Tools::displayPrice($possibleRefund, $currency),
+                        $this->l('on bank card')
+                        // (string)($possibleRefund - $partialRefund),
+                        // (string)($possibleRefund),
+                        // $currency->sign
+                    ));
+
+                    // Refund all amount
+                    $w->html('<p class="left">');
+                    $w->html(sprintf(
+                        '<form id="etrans_refund_all" method="post" action="%s">',
+                        $w->escape($_SERVER['REQUEST_URI'])
+                    ));
+                    $w->html(sprintf(
+                        '<input type="hidden" name="id_order" value="%d" />',
+                        $details['id_order']
+                    ));
+                    $w->html('<input type="hidden" name="order_action" value="refund_all" />');
+                    // Add amount as hidden field
+                    $w->html(sprintf('<input type="hidden" name="amountRefund" value="%s" />', $possibleRefund));
+                    $w->html(sprintf('<input type="hidden" name="transaction_id" value="%s" />', $refundableTransactionId));
+                    $w->button($this->l('Refund total transaction'), 'submit');
+                    $w->html('</form>');
+                    $w->html('</p>');
+
+/*
+                    // Refund item(s)
+                    if (Configuration::get('PS_ORDER_RETURN')) {
+                        $w->html('<p class="left">');
+                        $w->html(sprintf(
+                            '<form id="etrans_refund_item%s">',
+                            version_compare(_PS_VERSION_,'1.5','<') ? '14' : ''
+                        ));
+                        $w->button($this->l('Refund an item'), 'submit');
+                        $w->html('</form>');
+                        $w->html('</p>');
+                    }
+*/
+                    // Refund amount
+                    $w->html('<p class="left">');
+                    $w->html('<form id="etrans_refund_amount">');
+                    $w->button($this->l('Refund of an amount'), 'submit');
+                    $w->html('</form>');
+                    $w->html('</p>');
+
+                    // Refund amount form
+                    $w->html('<p class="left">');
+                    $w->html(sprintf(
+                        '<form id="etrans_refund_amount_input" method="post" action="%s" style="display:none;">',
+                        $w->escape($_SERVER['REQUEST_URI'])
+                    ));
+                    $w->html(sprintf(
+                        '<input type="hidden" name="id_order" value="%d" />',
+                        $details['id_order']
+                    ));
+                    $w->html('<input type="hidden" name="order_action" value="refund_amount" />');
+                    $w->html(sprintf('<input type="hidden" name="transaction_id" value="%s" />', $refundableTransactionId));
+                    $w->html('<input type="text" name="amountRefund" value="" /> ');
+                    $w->button($this->l('Refund this amount'), 'submit');
+                    $w->html('</form>');
+                    $w->html('</p>');
+
+                    $js = <<<EOF
+(function($) {
+    $(document).ready(function() {
+        $('#etrans_refund_all, #etrans_refund_amount_input').submit(function() {
+            return confirm(%s);
+        });
+        $('#etrans_refund_item14').submit(function() {
+            $('html, body').animate({ scrollTop:$('#orderProducts').offset().top }, 'slow');
+            return false;
+        });
+EOF;
+/*
+                    if (Configuration::get('PS_ORDER_RETURN')) {
+                        $js .= <<<EOF
+        $('#etrans_refund_item').submit(function() {
+            $('#desc-order-standard_refund').click();
+            return false;
+        });
+EOF;
+                    }
+*/
+                    $js .= <<<EOF
+        $('#etrans_refund_amount').submit(function() {
+            $('#etrans_refund_amount_input').show('normal');
+            return false;
+        });
+    });
+})(jQuery);
+EOF;
+                    $w->js(sprintf($js, json_encode($this->l('Are you sure?'))));
+                }
+            }
+        }
+    }
+
+
+    /**
+     * [getContent description]
+     *
+     * 3.0.11 Add mixed control / allow capture and refund
+     *
+     * @version  3.0.11
+     * @param    ETransactionsHtmlWriter $w      [description]
+     * @param    array                  $params [description]
+     * @return   [type]                         [description]
+     */
     public function getContent(ETransactionsHtmlWriter $w, array $params)
     {
         $orderId = $params['id_order'];
@@ -494,22 +654,22 @@ EOF;
             return null;
         }
 
+        // Retrieve method
+        $method = $this->getHelper()->getPaymentMethod($details['carte']);
+        if (1 == $method['mixte']) {
+            $details['payment_by'] = 'mixed';
+        }
+
         // For Kwixo payment
         if (in_array($details['carte'], array('STANDARD', '1XRNP', 'CREDIT'))) {
             $this->_writeKwixoDetails($w, $details);
-        }
-
-        // Can be refunded?
-        elseif ($this->getHelper()->canRefund($orderId) && 'PREPAYEE' != $details['method']) {
+        } // Can be refunded?
+        elseif ($this->getHelper()->canRefund($orderId) && ('PREPAYEE' != $details['method'] || 'mixed' == $details['payment_by'])) {
             $this->_writeRefundableDetails($w, $details);
-        }
-
-        // Waiting for capture?
-        elseif ($this->getHelper()->canCapture($orderId)) {
+        } // Waiting for capture?
+        elseif ($this->getHelper()->canCapture($orderId) && 'mixed' != $details['payment_by']) {
             $this->_writeCapturableDetails($w, $details);
-        }
-
-        // All other cases
+        } // All other cases
         else {
             $this->_writeDetails($w, $details);
         }
@@ -606,7 +766,16 @@ EOF;
         }
     }
 
-    // [3.0.6] Amount validation
+    /**
+     * [_processRefundAmount description]
+     *
+     * 3.0.11 Transaction Id parameter
+     * 3.0.6  Amount validation
+     *
+     * @version  3.0.11
+     * @param    ETransactionsHtmlWriter $w
+     * @param    array                  $details
+     */
     public function _processRefundAmount(ETransactionsHtmlWriter $w, array $details)
     {
         $orderId = $details['id_order'];
@@ -622,6 +791,11 @@ EOF;
         if (!$this->getHelper()->isValidAmount($amount, $this->getHelper()->getCurrencyDecimals($order))) {
             $w->alertError($this->l('Error when making refund request').' '.$this->l('Invalid amount:').' '.$amount);
             return false;
+        }
+
+        $transactionId = Tools::getValue('transaction_id');
+        if (false !== $transactionId) {
+            $details['id_transaction'] = $transactionId;
         }
 
         // $result = $this->getHelper()->makeRefundAmount($order, $details, Tools::getValue('amountRefund'));
