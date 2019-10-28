@@ -1,4 +1,4 @@
- <?php
+<?php
 /**
 * E-Transactions PrestaShop Module
 *
