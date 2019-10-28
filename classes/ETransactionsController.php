@@ -167,7 +167,7 @@ class ETransactionsController extends ETransactionsAbstract
                     $indexData = explode('-', $params['paymentIndex']);
                     if (1 < count($indexData)) {
                         // Check if several payments are expected
-                        if ('1' !== $indexData[1]) {
+                        if ('1' <= $indexData[1]) {
                             $type = 'mixed';
 
                             // [3.0.11] Check if it is an additionnal payment to make it processed after the real mixed one
