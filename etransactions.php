@@ -13,7 +13,7 @@
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   3.0.13
+*  @version   3.0.14
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -46,7 +46,7 @@ class ETransactions extends PaymentModule
 
         $this->name = 'etransactions';
         $this->tab = 'payments_gateways';
-        $this->version = '3.0.13';
+        $this->version = '3.0.14';
         $this->author = 'E-Transactions';
         $this->bootstrap = true;
 
@@ -242,7 +242,7 @@ class ETransactions extends PaymentModule
         global $smarty, $cart, $cookie;
 
         // Load methods
-        $methods = $this->getHelper()->getActivePaymentMethods();
+        $methods = $this->getHelper()->getActivePaymentMethods($cart);
         // [3.0.9] Remove filtering
         // $debitTypeForCard = $this->getConfig()->getDebitTypeForCard();
         $recurringCards = array();
@@ -323,11 +323,11 @@ class ETransactions extends PaymentModule
         if (!$this->active) {
             return;
         }
-
+        global $cart;
         $paymentOptions = array();
 
         // Load methods
-        $methods = $this->getHelper()->getActivePaymentMethods();
+        $methods = $this->getHelper()->getActivePaymentMethods($cart);
         // [3.0.9] Remove filtering
         // $debitTypeForCard = $this->getConfig()->getDebitTypeForCard();
         $recurringCards = array();
@@ -407,11 +407,29 @@ class ETransactions extends PaymentModule
         if (!$this->active) {
             return;
         }
-
+        global $cart;
         $paymentOptions = array();
 
+		$error = Tools::getValue('etransReason');
+		if($error){
+			$messageHtml = "<p class='alert alert-danger'><b>";
+			switch($error){
+				case "cancel":
+					$messageHtml .=  $this->l('The payment was cancelled.');
+					break;
+				case "error":
+					$messageHtml .=  $this->l('Your payment was refused, please choose another payment method.');
+					break;
+				default:break;
+			}
+			$messageHtml .=  "</b></p>";
+			echo $messageHtml;
+		}
+
+
+
         // Load methods
-        $methods = $this->getHelper()->getActivePaymentMethods();
+        $methods = $this->getHelper()->getActivePaymentMethods($cart);
         // [3.0.9] Remove filtering
         // $debitTypeForCard = $this->getConfig()->getDebitTypeForCard();
         $recurringCards = array();
@@ -853,7 +871,7 @@ class ETransactions extends PaymentModule
         if ((Context::getContext()->link instanceof Link) === false) {
             Context::getContext()->link = new Link();
         }
-
+        $result = false;
         $this->logDebug(sprintf('Cart %d: Validating order', $cart->id));
         try {
             $paymentName = $this->getHelper()->getDisplayName($this->displayName, $params['cardType']);

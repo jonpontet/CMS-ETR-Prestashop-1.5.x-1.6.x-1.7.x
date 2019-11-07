@@ -1,4 +1,4 @@
- <?php
+<?php
 /**
 * E-Transactions PrestaShop Module
 *
@@ -13,7 +13,7 @@
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   3.0.12
+*  @version   3.0.14
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -284,8 +284,8 @@ class ETransactionsHelper extends ETransactionsAbstract
         $data = count($result) == 2 ? $result[1] : null;
         $headers = explode("\r\n", $result[0]);
         if (preg_match('#^HTTP/(1\.0|1\.1|2) ([0-9]{3}) (.*)$#i', array_shift($headers), $matches)) {
-            $code = intval($matches[1]);
-            $status = trim($matches[2]);
+            $code = intval($matches[2]);
+            $status = trim($matches[3]);
         } else {
             $code = 999;
             $status = 'Error';
@@ -682,7 +682,7 @@ class ETransactionsHelper extends ETransactionsAbstract
             case 1:
                 if ($this->getConfig()->get3DSEnabled()) {
                     $tdsAmount = $this->getConfig()->get3DSAmount();
-                    $enable3ds = empty($tdsAmount) || ($orderAmount >= $tdsAmount);
+                    $enable3ds = empty($tdsAmount) || $orderAmount >= $tdsAmount;
                 }
                 break;
 
@@ -845,7 +845,7 @@ class ETransactionsHelper extends ETransactionsAbstract
                 $response = $client->get($testUrl);
                 if (!is_array($response)) {
                     $this->logDebug(sprintf('  Invalid response type %s', gettype($response)));
-                } elseif ($response['status'] != 200) {
+                } elseif ($response['code'] != 200) {
                     $this->logDebug(sprintf('  Invalid response code %s', $response['code']));
                 } else {
                     $this->logDebug(sprintf('  Valid url found: %s', $url));
@@ -970,17 +970,32 @@ class ETransactionsHelper extends ETransactionsAbstract
         return Db::getInstance()->executeS($sql);
     }
 
-    public function getActivePaymentMethods()
+    public function getActivePaymentMethods($cart = null)
     {
         $allMethods = $this->getAllPaymentMethods();
         $methods = array();
-        foreach ($allMethods as $method) {
+		$amountScale = $this->_currencyDecimals[$this->getCurrency($cart)];
+		$amountScale = pow(10, $amountScale);
+		$max = round(floatval($this->getConfig()->getMaxAmount()));
+		$max = intval(sprintf('%03d', $max*$amountScale));
+		$min = round(floatval($this->getConfig()->getMinAmount()));
+		$min = intval(sprintf('%03d', $min*$amountScale));
+		$cartAmount = round(floatval($cart->getOrderTotal()));
+		$cartAmount = intval(sprintf('%03d', $cartAmount * $amountScale));
+ 		$limited = false;
+		if($min>=0 || $max>=0)$limited = true;
+  foreach ($allMethods as $method) {
             $id = $method['id_card'];
             $active = Configuration::get('ETRANS_CARD_ENABLED_'.$id);
+			if($limited && (($cartAmount >= $max) || ($cartAmount <= $min))){
+				$active = false;
+			}else{
+				$active = true;
+			}
             $label = Configuration::get('ETRANS_CARD_LABEL_'.$id);
-            if ($active !== false) {
-                $method['active'] = $active;
-            }
+            if ($active == false) {
+                $method['active'] = 0;
+			}
             if ($label !== false) {
                 $method['label'] = $label;
             }

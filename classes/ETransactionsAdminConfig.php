@@ -13,7 +13,7 @@
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   3.0.11
+*  @version   3.0.14
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -274,10 +274,12 @@ $('#ETRANS_3DS').change(function() {
     if (this.value == 1) {
         alert.show('normal');
         npt.show('normal');
+        npt2.show('normal');
     }
     else {
         alert.hide('normal');
         npt.hide('normal');
+        npt2.hide('normal');
     }
 }).change();
 $('#ETRANS_WEB_CASH_DIRECT').change(function() {
@@ -313,6 +315,26 @@ EOF;
             null,
             $this->getConfig()->get3DSEnabled() == '1'
         );
+        
+        // minimum amount
+        $w->formText(
+            'ETRANS_MIN_AMOUNT',
+            $this->l('Minimum amount order'),
+            $this->getConfig()->getMinAmount(),
+            $this->l('Set the minimum value to display this payment method'),
+            3,
+            null
+            );
+
+        // maximal amount
+        $w->formText(
+            'ETRANS_MAX_AMOUNT',
+            $this->l('Maximum amount order'),
+            $this->getConfig()->getMaxAmount(),
+            $this->l('Set the maximum value to display this payment method'),
+            3,
+            null
+            );
 
         // Threetime: enable/disable
         $w->formSelect(
