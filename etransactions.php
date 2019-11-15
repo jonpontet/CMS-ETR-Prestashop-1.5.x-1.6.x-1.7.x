@@ -13,7 +13,7 @@
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   3.0.14
+*  @version   3.0.15
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -46,7 +46,7 @@ class ETransactions extends PaymentModule
 
         $this->name = 'etransactions';
         $this->tab = 'payments_gateways';
-        $this->version = '3.0.14';
+        $this->version = '3.0.15';
         $this->author = 'E-Transactions';
         $this->bootstrap = true;
 
@@ -260,13 +260,13 @@ class ETransactions extends PaymentModule
             );
 
             $params = http_build_query($params);
-
             $card = array(
                 'id' => $method['id_card'],
                 'payment' => $method['type_payment'],
                 'card' => $method['type_card'],
                 'label' => $method['label'],
-                'url' => $this->getPath().'?'.$params,
+                // 'url' => $this->getPath().'?'.$params,
+                'url' => $this->getRedirPath().'&'.$params,
                 'image' => $this->getMethodImageUrl($method['type_card']),
             );
             $cards[] = $card;
@@ -546,16 +546,17 @@ class ETransactions extends PaymentModule
         if (empty($details)) {
             return;
         }
+		$version = version_compare(_PS_VERSION_, '1.6.1.24', '>') ? "17":"";
 
         $lang = $this->context->language;
         if (!empty($lang) && !empty($lang->iso_code)) {
-            $template = $this->getTemplatePath('payment_return.' . $lang->iso_code . '.tpl');
+            $template = $this->getTemplatePath('payment_return'. $version. '.' . $lang->iso_code . '.tpl');
             if (!is_null($template)) {
-                return $this->fetchTemplate('payment_return.' . $lang->iso_code . '.tpl');
+                return $this->fetchTemplate('payment_return'. $version. '.' . $lang->iso_code . '.tpl');
             }
         }
 
-        return $this->fetchTemplate('payment_return.tpl');
+        return $this->fetchTemplate('payment_return'. $version. '.tpl');
     }
 
     /**

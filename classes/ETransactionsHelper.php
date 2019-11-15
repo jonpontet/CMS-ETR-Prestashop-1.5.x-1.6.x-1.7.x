@@ -983,7 +983,7 @@ class ETransactionsHelper extends ETransactionsAbstract
 		$cartAmount = round(floatval($cart->getOrderTotal()));
 		$cartAmount = intval(sprintf('%03d', $cartAmount * $amountScale));
  		$limited = false;
-		if($min>=0 || $max>=0)$limited = true;
+		if($min>0 || $max>0)$limited = true;
   foreach ($allMethods as $method) {
             $id = $method['id_card'];
             $active = Configuration::get('ETRANS_CARD_ENABLED_'.$id);

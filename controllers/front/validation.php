@@ -38,7 +38,7 @@ class ETransactionsValidationModuleFrontController extends ModuleFrontController
      * @see FrontController::postProcess()
      */
     public function initContent(){
-		$this->setTemplate('module:etransactions/views/templates/front/validation.tpl');
+			$this->setTemplate('module:etransactions/views/templates/front/validation.tpl');
 	}
 	public function postProcess()
     {
