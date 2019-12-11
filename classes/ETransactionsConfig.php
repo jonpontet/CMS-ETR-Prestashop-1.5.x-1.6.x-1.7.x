@@ -13,7 +13,7 @@
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   3.0.8
+*  @version   3.0.14
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -32,6 +32,8 @@ class ETransactionsConfig
     private $_defaults = array(
         'ETRANS_3DS'                            => 1,
         'ETRANS_3DS_MIN_AMOUNT'                 => '',
+        'ETRANS_MIN_AMOUNT'                     => '',
+        'ETRANS_MAX_AMOUNT'                     => '',
         'ETRANS_DEBUG_MODE'                     => 'FALSE',
         'ETRANS_HASH'                           => 'SHA512',
         'ETRANS_IDENTIFIANT'                    => '259207933',
@@ -177,6 +179,21 @@ class ETransactionsConfig
     public function get3DSAmount()
     {
         return $this->_get('ETRANS_3DS_MIN_AMOUNT');
+    }
+    
+    public function getMinAmount()
+    {
+        return $this->_get('ETRANS_MIN_AMOUNT');
+    }
+
+    public function get3DSMinAmount()
+    {
+        return $this->_get('ETRANS_3DS_MIN_AMOUNT');
+    }
+
+    public function getMaxAmount()
+    {
+        return $this->_get('ETRANS_MAX_AMOUNT');
     }
 
     public function getAllowedIps()
