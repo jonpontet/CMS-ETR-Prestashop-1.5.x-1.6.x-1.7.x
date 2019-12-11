@@ -46,7 +46,7 @@ class ETransactions extends PaymentModule
 
         $this->name = 'etransactions';
         $this->tab = 'payments_gateways';
-        $this->version = '3.0.15';
+        $this->version = '3.0.16';
         $this->author = 'E-Transactions';
         $this->bootstrap = true;
 

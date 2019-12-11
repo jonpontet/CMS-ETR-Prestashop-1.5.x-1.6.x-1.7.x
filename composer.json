@@ -2,7 +2,7 @@
   "name": "etransactions/prestashop",
   "description": "E-Transactions - PrestaShop integration module",
   "type": "prestashop-module",
-  "version": "3.0.14",
+  "version": "3.0.16",
   "homepage": "http://www.e-transactions.fr/",
   "license": "AFL - Academic Free License (AFL 3.0)",
   "require": {
