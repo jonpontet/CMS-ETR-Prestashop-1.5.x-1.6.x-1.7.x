@@ -13,7 +13,7 @@
 * support@e-transactions.fr so we can mail you a copy immediately.
 *
 *  @category  Module / payments_gateways
-*  @version   3.0.15
+*  @version   3.0.17
 *  @author    E-Transactions <support@e-transactions.fr>
 *  @copyright 2012-2016 E-Transactions
 *  @license   http://opensource.org/licenses/OSL-3.0
@@ -46,7 +46,7 @@ class ETransactions extends PaymentModule
 
         $this->name = 'etransactions';
         $this->tab = 'payments_gateways';
-        $this->version = '3.0.16';
+        $this->version = '3.0.17';
         $this->author = 'E-Transactions';
         $this->bootstrap = true;
 

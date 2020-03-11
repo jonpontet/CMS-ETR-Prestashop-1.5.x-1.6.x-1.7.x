@@ -1,5 +1,9 @@
 # Change Log
 
+## [3.0.17] 2020-03-10
+### Ajouts & Corrections
+- Mise à jour magasin de certificats
+
 ## [3.0.14] 2019-10-31
 ### Ajouts & Corrections
 - Ajout de la limite haute pour le 3DS
