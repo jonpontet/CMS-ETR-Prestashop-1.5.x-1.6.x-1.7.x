@@ -34,6 +34,18 @@
  */
 class ETransactionsRedirectModuleFrontController extends ModuleFrontController
 {
+    /**
+     * Initialising content with empty template to prevent Smarty compilation error
+     * https://github.com/E-Transactions-CA/CMS-ETR-Prestashop-1.5.x-1.6.x-1.7.x/issues/12
+     *
+     * @throws PrestaShopException
+     */
+    public function initContent() {
+        // Setting empty template
+        if(_PS_VERSION_ >= '1.7')$this->setTemplate('module:etransactions/views/templates/front/validation.tpl');
+        else $this->setTemplate('validation.tpl');
+    }
+
 	/**
      * @see FrontController::postProcess()
      */
